@@ -1,280 +1,304 @@
-# Lung Cancer Risk Prediction
+# 🚗 Car Price Prediction — MLOps Pipeline
 
-A production-ready machine learning pipeline for predicting lung cancer risk based on patient survey data. Built with Python, scikit-learn, XGBoost, FastAPI, and Apache Airflow.
-
----
-
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
-- [Pipeline Stages](#pipeline-stages)
-- [API Usage](#api-usage)
-- [Model Performance](#model-performance)
-- [Airflow Orchestration](#airflow-orchestration)
-- [Testing](#testing)
-- [Docker Deployment](#docker-deployment)
+Hệ thống dự đoán giá xe sử dụng **Apache Airflow**, **MLflow**, và **FastAPI**, được đóng gói bằng Docker Compose. Hỗ trợ nhiều thuật toán (CatBoost, XGBoost, Random Forest), tự động chọn model tốt nhất dựa trên metric R² và phục vụ dự đoán qua REST API.
 
 ---
 
-## 🎯 Overview
-
-This project implements an end-to-end ML pipeline for lung cancer risk prediction using survey-based patient data. The system includes:
-
-- **Data Pipeline**: Ingestion, validation, preprocessing, and feature engineering
-- **Model Training**: Logistic Regression, Random Forest, and XGBoost with hyperparameter tuning
-- **Evaluation**: Comprehensive metrics, ROC/PR curves, threshold optimization
-- **Explainability**: SHAP-based global and local feature importance
-- **API**: FastAPI REST endpoints for real-time predictions
-- **Orchestration**: Airflow DAG for automated retraining
-- **Versioning**: File-based model versioning with metadata tracking
-
----
-
-## 🏗️ Architecture
+## 📐 Kiến trúc tổng quan
 
 ```
-┌─────────────┐    ┌──────────────┐    ┌─────────────────┐
-│  Raw Data   │───▶│ Preprocessing│───▶│   Feature Eng.  │
-│  (CSV/API)  │    │  & Cleaning  │    │  (Derived Feats)│
-└─────────────┘    └──────────────┘    └────────┬────────┘
-                                                │
-                   ┌──────────────┐    ┌────────▼────────┐
-                   │  Evaluation  │◀───│  Model Training │
-                   │  & Plotting  │    │ (LR/RF/XGBoost) │
-                   └──────┬───────┘    └─────────────────┘
-                          │
-              ┌───────────▼───────────┐
-              │   FastAPI Serving     │
-              │   POST /predict       │
-              └───────────────────────┘
+                      ┌─────────────────────────────────────────────┐
+                      │          Apache Airflow (Orchestration)      │
+                      │                                             │
+                      │  [catboost_training]  ──┐                   │
+                      │  [xgboost_training]   ──┼──► [promote_best] │
+                      │  [random_forest_training]┘        │         │
+                      └──────────────────────────────┬────┘─────────┘
+                                                     │ reload-model
+               ┌─────────────────┐                   │
+               │  PostgreSQL (Data)│                   ▼
+               │  car_source.CarInfo│        ┌─────────────────┐
+               └────────┬────────┘          │  Model Serving  │
+                        │ data              │  FastAPI :8000  │
+                        ▼                   │  /predict       │
+               ┌─────────────────┐          └────────┬────────┘
+               │  MLflow Server  │◄──────────────────┘
+               │  :5001          │  models:/car_price_model/Production
+               │  - Experiments  │
+               │  - Registry     │
+               └─────────────────┘
 ```
 
 ---
 
-## 📁 Project Structure
+## 📁 Cấu trúc thư mục
 
 ```
-project/
-├── data/
-│   ├── raw/                    # Raw CSV datasets
-│   └── processed/              # Cleaned & transformed data
-├── src/
-│   ├── data/
-│   │   ├── ingest.py           # Data loading & validation
-│   │   └── preprocess.py       # Cleaning, encoding, scaling
-│   ├── features/
-│   │   └── build_features.py   # Feature engineering
-│   ├── models/
-│   │   ├── train.py            # Model training pipeline
-│   │   ├── evaluate.py         # Evaluation & visualization
-│   │   ├── predict.py          # Inference module
-│   │   └── explain.py          # SHAP explainability
-│   └── utils/
-│       ├── config.py           # Central configuration
-│       └── logger.py           # Logging utility
-├── api/
-│   └── main.py                 # FastAPI application
-├── airflow/dags/
-│   └── retrain_pipeline.py     # Airflow retraining DAG
-├── models/                     # Saved model artifacts
-├── logs/                       # Application logs
-├── tests/                      # pytest test suite
-├── requirements.txt
-├── Dockerfile
-└── README.md
+.
+├── .env                          # Biến môi trường (DB, MLflow, Airflow)
+├── docker-compose.yaml           # Toàn bộ stack: Airflow, PostgreSQL, MLflow, Serving
+├── Dockerfile                    # Custom Airflow image
+├── serving/
+│   ├── app.py                    # FastAPI serving app
+│   ├── Dockerfile
+│   └── requirements.txt
+└── run_env/
+    ├── mlflow/
+    │   └── Dockerfile            # MLflow tracking server
+    └── dags/
+        ├── promote_best_model.py # DAG: so sánh metric, promote model lên Production
+        ├── catboost/
+        │   ├── train.py          # Script train CatBoost
+        │   ├── docker.py         # Airflow DAG
+        │   ├── Dockerfile        # Training container
+        │   ├── requirements.txt
+        │   └── build.sh          # Build + push image lên DockerHub
+        ├── xgboost/
+        │   ├── train.py          # Script train XGBoost
+        │   ├── docker.py         # Airflow DAG
+        │   ├── Dockerfile
+        │   ├── requirements.txt
+        │   └── build.sh
+        └── random_forest/
+            ├── train.py          # Script train Random Forest
+            ├── docker.py         # Airflow DAG
+            ├── Dockerfile
+            ├── requirements.txt
+            └── build.sh
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Yêu cầu hệ thống
 
-### 1. Clone & Setup
+| Công cụ | Phiên bản tối thiểu |
+|---------|-------------------|
+| Docker  | 24+               |
+| Docker Compose | 2.0+       |
+| RAM     | 6 GB trở lên      |
+| Disk    | 10 GB trống       |
+
+---
+
+## 🚀 Hướng dẫn chạy End-to-End
+
+### Bước 1 — Cấu hình môi trường
+
+Chỉnh sửa file `.env` theo môi trường của bạn:
+
+```dotenv
+AIRFLOW_PROJ_DIR=./run_env
+AIRFLOW_UID=1000                         # UID của user Linux hiện tại (chạy: id -u)
+HOST_TRAINING_DIR=/đường/dẫn/tuyệt/đối/run_env  # Thay bằng đường dẫn thực tế
+
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin
+POSTGRES_DB=postgres
+
+MLFLOW_VERSION=2.3.2
+```
+
+> **Lưu ý:** `HOST_TRAINING_DIR` phải là **đường dẫn tuyệt đối** trên host (không dùng `./`), vì Docker cần mount volume từ host.
+
+---
+
+### Bước 2 — Build và push các Training Image lên DockerHub
+
+Mỗi thuật toán có Docker image riêng. Build và push trước khi chạy Airflow:
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+# CatBoost
+cd run_env/dags/catboost
+bash build.sh
 
-# Install dependencies
-pip install -r requirements.txt
+# XGBoost
+cd ../xgboost
+bash build.sh
+
+# Random Forest
+cd ../random_forest
+bash build.sh
 ```
 
-### 2. Generate Sample Data & Train
+> **Lưu ý:** Đảm bảo đã `docker login` trước khi push. Thay `bitis2004` trong `build.sh` bằng DockerHub username của bạn nếu cần.
+
+---
+
+### Bước 3 — Khởi động toàn bộ stack
 
 ```bash
-# Generate synthetic dataset
-python -m src.data.ingest
+cd /đường/dẫn/đến/test_dm
 
-# Run full pipeline: preprocess → features → train → evaluate
-python -m src.models.train
-python -m src.models.evaluate
+docker compose up -d --build
 ```
 
-### 3. Start API
+Chờ khoảng 1–2 phút để tất cả services healthy. Kiểm tra trạng thái:
 
 ```bash
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+docker compose ps
 ```
 
-### 4. Make a Prediction
+Tất cả services phải ở trạng thái `healthy` hoặc `running`:
+
+| Service | Địa chỉ | Mô tả |
+|---------|---------|-------|
+| Airflow Webserver | http://localhost:8080 | Orchestration UI (user: `airflow` / pass: `airflow`) |
+| MLflow Tracking | http://localhost:5001 | Experiment tracking & Model Registry |
+| Model Serving API | http://localhost:8000 | REST API dự đoán giá xe |
+| PostgreSQL (DWH) | localhost:5433 | Database chứa dữ liệu xe |
+
+---
+
+### Bước 4 — Chạy pipeline training thủ công (lần đầu)
+
+Vào Airflow UI tại `http://localhost:8080`, bật và trigger thủ công các DAG theo thứ tự:
+
+**4.1** Bật và trigger 3 DAG training (có thể chạy song song):
+- `catboost_training`
+- `xgboost_training`
+- `random_forest_training`
+
+Hoặc trigger qua CLI:
+
+```bash
+docker exec airflow-webserver airflow dags trigger catboost_training
+docker exec airflow-webserver airflow dags trigger xgboost_training
+docker exec airflow-webserver airflow dags trigger random_forest_training
+```
+
+**4.2** Chờ cả 3 DAG training hoàn thành (xem logs trên Airflow UI).
+
+**4.3** Trigger DAG `promote_best_model`:
+
+```bash
+docker exec airflow-webserver airflow dags trigger promote_best_model
+```
+
+DAG này sẽ:
+1. Query MLflow tìm run có **R² cao nhất** trong experiment `Car_Price_Prediction`
+2. Promote model version đó lên stage **Production** trong MLflow Registry
+3. Tự động gọi `/reload-model` trên serving container để load model mới
+
+---
+
+### Bước 5 — Kiểm tra kết quả trên MLflow UI
+
+Truy cập `http://localhost:5001`:
+
+- **Experiments** → `Car_Price_Prediction`: xem tất cả runs của 3 thuật toán, so sánh metrics
+- **Models** → `car_price_model`: xem các version đã register, version nào đang ở **Production**
+
+---
+
+### Bước 6 — Thử nghiệm Serving API
+
+Kiểm tra API đang hoạt động:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Dự đoán giá xe:
 
 ```bash
 curl -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
   -d '{
-    "GENDER": "M",
-    "AGE": 65,
-    "SMOKING": 2,
-    "YELLOW_FINGERS": 2,
-    "ANXIETY": 1,
-    "PEER_PRESSURE": 1,
-    "CHRONIC_DISEASE": 2,
-    "FATIGUE": 2,
-    "ALLERGY": 1,
-    "WHEEZING": 2,
-    "ALCOHOL_CONSUMING": 2,
-    "COUGHING": 2,
-    "SHORTNESS_OF_BREATH": 2,
-    "SWALLOWING_DIFFICULTY": 1,
-    "CHEST_PAIN": 2
+    "brand": "Toyota",
+    "model": "Camry",
+    "year": 2020,
+    "mileage": 30000,
+    "fuel_type": "Gasoline",
+    "transmission": "Automatic",
+    "color": "White",
+    "num_owners": 1
   }'
 ```
 
-Response:
-```json
-{
-  "prediction": 1,
-  "probability": 0.8523,
-  "risk_level": "High",
-  "label": "Lung Cancer Detected"
-}
+Xem tài liệu API đầy đủ (Swagger UI):
+
+```
+http://localhost:8000/docs
 ```
 
 ---
 
-## 🔄 Pipeline Stages
+## 🔄 Pipeline tự động hàng tháng
 
-| Stage | Module | Description |
-|-------|--------|-------------|
-| 1. Ingest | `src/data/ingest.py` | Load CSV/API data, validate schema |
-| 2. Preprocess | `src/data/preprocess.py` | Handle missing values, encode, scale, cap outliers |
-| 3. Features | `src/features/build_features.py` | Create derived features (smoking risk, health score, etc.) |
-| 4. Train | `src/models/train.py` | Train 3 models, hyperparameter tuning, select best |
-| 5. Evaluate | `src/models/evaluate.py` | Metrics, plots, threshold optimization |
-| 6. Explain | `src/models/explain.py` | SHAP global & local explanations |
-| 7. Predict | `src/models/predict.py` | Load model, preprocess input, return prediction |
+Các DAG được lên lịch tự động, **không cần can thiệp thủ công**:
 
----
-
-## 📊 API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `GET` | `/health` | Detailed health status |
-| `POST` | `/predict` | Predict lung cancer risk |
-| `POST` | `/update-data` | Submit new data for retraining |
-| `POST` | `/reload-model` | Reload model from disk |
-| `GET` | `/docs` | Swagger UI documentation |
+| DAG | Lịch chạy | Mô tả |
+|-----|-----------|-------|
+| `catboost_training` | 00:00 ngày 1 hàng tháng | Train CatBoost với dữ liệu mới nhất |
+| `xgboost_training` | 00:00 ngày 1 hàng tháng | Train XGBoost với dữ liệu mới nhất |
+| `random_forest_training` | 00:00 ngày 1 hàng tháng | Train Random Forest với dữ liệu mới nhất |
+| `promote_best_model` | 02:00 ngày 1 hàng tháng | So sánh R², promote model tốt nhất lên Production |
 
 ---
 
-## 📈 Model Performance
+## 🔧 Xử lý sự cố thường gặp
 
-Models are evaluated using:
-- **Recall** (priority — minimize false negatives)
-- Precision
-- F1-Score
-- ROC-AUC
+### Serving API trả về 503 "Model not loaded"
 
-The best model is selected by **recall** to minimize missed diagnoses.
-
-Evaluation outputs include:
-- Confusion matrix heatmap
-- ROC curve
-- Precision-Recall curve
-- Threshold analysis plot
-- SHAP feature importance
-
----
-
-## ⚙️ Airflow Orchestration
-
-The retraining DAG (`lung_cancer_retrain`) runs weekly:
-
-```
-ingest_data → preprocess_data → build_features → train_model → evaluate_model → save_model
-```
-
-Configuration:
-- Schedule: `@weekly`
-- Retries: 3
-- Retry delay: 5 minutes
-- Email on failure: configurable
-
----
-
-## 🧪 Testing
+Model chưa có ở stage Production. Cần chạy pipeline training + promote trước:
 
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test module
-pytest tests/test_ingest.py -v
-pytest tests/test_preprocess.py -v
-pytest tests/test_predict.py -v
+docker exec airflow-webserver airflow dags trigger catboost_training
+# ... chờ hoàn thành ...
+docker exec airflow-webserver airflow dags trigger promote_best_model
 ```
 
----
+### DAG training thất bại — "Cannot pull image"
 
-## 🐳 Docker Deployment
+Image training chưa được push lên DockerHub. Chạy lại `build.sh` trong thư mục tương ứng và đảm bảo đã `docker login`.
+
+### MLflow không kết nối được PostgreSQL
+
+Kiểm tra `pgsql` container đã healthy chưa:
 
 ```bash
-# Build image
-docker build -t lung-cancer-prediction .
+docker compose ps pgsql
+```
 
-# Run container
-docker run -p 8000:8000 lung-cancer-prediction
+Nếu chưa, chờ thêm hoặc restart:
+
+```bash
+docker compose restart pgsql
+docker compose restart mlflow
+```
+
+### Reload model thủ công
+
+Nếu cần force reload model mới nhất vào serving container mà không cần chạy lại DAG:
+
+```bash
+curl -X POST http://localhost:8000/reload-model
 ```
 
 ---
 
-## 📝 Dataset
+## 📊 Metrics đánh giá model
 
-Based on the [Kaggle Survey Lung Cancer](https://www.kaggle.com/datasets/mysarahmadbhat/lung-cancer) dataset with 16 features:
+| Metric | Ý nghĩa | Model tốt khi |
+|--------|---------|---------------|
+| **R²** | Hệ số xác định (0–1) | R² càng cao càng tốt (> 0.85) |
+| **RMSE** | Root Mean Squared Error | Càng thấp càng tốt |
+| **MAE** | Mean Absolute Error | Càng thấp càng tốt |
+| **MAPE** | Mean Absolute Percentage Error | Càng thấp càng tốt (< 15%) |
 
-| Feature | Description |
-|---------|-------------|
-| GENDER | M / F |
-| AGE | Patient age |
-| SMOKING | 1=No, 2=Yes |
-| YELLOW_FINGERS | 1=No, 2=Yes |
-| ANXIETY | 1=No, 2=Yes |
-| PEER_PRESSURE | 1=No, 2=Yes |
-| CHRONIC_DISEASE | 1=No, 2=Yes |
-| FATIGUE | 1=No, 2=Yes |
-| ALLERGY | 1=No, 2=Yes |
-| WHEEZING | 1=No, 2=Yes |
-| ALCOHOL_CONSUMING | 1=No, 2=Yes |
-| COUGHING | 1=No, 2=Yes |
-| SHORTNESS_OF_BREATH | 1=No, 2=Yes |
-| SWALLOWING_DIFFICULTY | 1=No, 2=Yes |
-| CHEST_PAIN | 1=No, 2=Yes |
-| LUNG_CANCER | YES / NO (target) |
+> DAG `promote_best_model` mặc định chọn model theo **R²** cao nhất. Có thể thay đổi trong hàm `find_and_promote_best_model()` nếu muốn dùng RMSE hay MAPE.
 
 ---
 
-## ⚠️ Disclaimer
+## ➕ Thêm thuật toán mới
 
-This project is for **educational and research purposes only**. It should **not** be used for clinical decision-making or as a substitute for professional medical advice.
+Để thêm một thuật toán mới (ví dụ: LightGBM):
 
----
+1. Tạo thư mục `run_env/dags/lightgbm/` với 5 file: `train.py`, `docker.py`, `Dockerfile`, `requirements.txt`, `build.sh`
+2. Trong `train.py`: đặt `mlflow.set_experiment("Car_Price_Prediction")` và `registered_model_name="car_price_model"`
+3. Build và push image: `bash build.sh`
+4. Thêm library vào `serving/requirements.txt` nếu cần
+5. Rebuild serving container: `docker compose up -d --build serving`
+6. Trigger DAG training mới trên Airflow UI
 
-## 📄 License
-
-MIT License
+DAG `promote_best_model` sẽ **tự động** so sánh và chọn model tốt nhất mà không cần sửa thêm gì.
