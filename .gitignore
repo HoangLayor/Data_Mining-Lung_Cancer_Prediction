@@ -44,5 +44,5 @@ models/plots/*.png
 
 # Environment variables
 .env
-.agent/run_env/logs/
+.agent
 run_env/logs
