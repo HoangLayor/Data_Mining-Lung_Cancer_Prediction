@@ -58,35 +58,57 @@ def _cap_outliers_iqr(series: pd.Series, factor: float = 1.5) -> pd.Series:
 
 
 def _encode_target(df: pd.DataFrame) -> pd.DataFrame:
-    """Encode the target column: YES→1, NO→0."""
+    """
+    Encode the target column. 
+    Handles both 'YES'/'NO' and already numeric 0/1.
+    """
     df = df.copy()
-    if pd.api.types.is_string_dtype(df[TARGET_COLUMN]):
-        df[TARGET_COLUMN] = df[TARGET_COLUMN].map({"YES": 1, "NO": 0}).astype(int)
-        logger.info("Encoded target column: YES->1, NO->0")
+    if TARGET_COLUMN in df.columns:
+        if pd.api.types.is_string_dtype(df[TARGET_COLUMN]):
+            # Case insensitive mapping
+            mapping = {"YES": 1, "NO": 0, "1": 1, "0": 0}
+            df[TARGET_COLUMN] = df[TARGET_COLUMN].str.upper().map(mapping)
+            logger.info(f"Encoded target '{TARGET_COLUMN}': string -> numeric")
+        else:
+            # Ensure it's 0/1 if numeric
+            df[TARGET_COLUMN] = df[TARGET_COLUMN].astype(int)
     return df
 
 
 def _encode_gender(df: pd.DataFrame) -> pd.DataFrame:
-    """Encode GENDER column: M→1, F→0."""
+    """
+    Encode gender column.
+    Handles 'M'/'F', 'MALE'/'FEMALE', or already numeric 0/1.
+    """
     df = df.copy()
-    if "GENDER" in df.columns and pd.api.types.is_string_dtype(df["GENDER"]):
-        df["GENDER"] = df["GENDER"].map({"M": 1, "F": 0}).astype(int)
-        logger.info("Encoded GENDER: M->1, F->0")
+    col = "gender" if "gender" in df.columns else "GENDER"
+    if col in df.columns:
+        if pd.api.types.is_string_dtype(df[col]):
+            mapping = {"M": 1, "F": 0, "MALE": 1, "FEMALE": 0, "1": 1, "0": 0}
+            df[col] = df[col].str.upper().map(mapping)
+            logger.info(f"Encoded {col}: string -> numeric")
+        else:
+            df[col] = df[col].astype(int)
     return df
 
 
 def _remap_binary_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Remap binary columns from 1/2 encoding to 0/1 encoding."""
+    """
+    Remap binary columns from 1/2 encoding to 0/1 encoding.
+    Skips if columns are already 0/1.
+    """
     df = df.copy()
     remapped = []
     for col in BINARY_COLUMNS:
         if col in df.columns:
+            # Dropna to find unique values
             unique_vals = set(df[col].dropna().unique())
-            if unique_vals.issubset({1, 2}):
+            # If values are {1, 2}, remap to {0, 1}
+            if unique_vals.issubset({1, 2}) and unique_vals != {0, 1}:
                 df[col] = df[col].map({1: 0, 2: 1})
                 remapped.append(col)
     if remapped:
-        logger.info(f"Remapped {len(remapped)} binary columns from 1/2 -> 0/1")
+        logger.info(f"Remapped {len(remapped)} binary columns from 1/2 -> 0/1: {remapped}")
     return df
 
 

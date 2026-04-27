@@ -15,38 +15,29 @@ from src.utils.config import BINARY_COLUMNS
 logger = get_logger(__name__)
 
 
-def _create_smoking_risk(df: pd.DataFrame) -> pd.DataFrame:
+def _create_smoking_impact(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Create smoking risk feature as a proxy for smoking intensity.
-
-    Since the dataset lacks cigarettes_per_day and smoking_years,
-    we use SMOKING × AGE as a proxy (older smokers = higher risk).
+    Create smoking impact feature.
+    Calculates impact as smoker flag × pack_years.
     """
     df = df.copy()
-    if "SMOKING" in df.columns and "AGE" in df.columns:
-        df["SMOKING_RISK"] = df["SMOKING"] * df["AGE"]
-        logger.info("Created feature: SMOKING_RISK = SMOKING × AGE")
+    if "smoker" in df.columns and "pack_years" in df.columns:
+        df["smoking_impact"] = df["smoker"] * df["pack_years"]
+        logger.info("Created feature: smoking_impact = smoker × pack_years")
     return df
 
 
-def _create_health_risk_score(df: pd.DataFrame) -> pd.DataFrame:
+def _create_clinical_severity_score(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Create a composite health risk score from multiple symptoms.
-
-    Combines chronic disease indicators into a single risk metric.
+    Create a composite clinical severity score from imaging and symptoms.
     """
     df = df.copy()
-    risk_columns = [
-        "CHRONIC_DISEASE", "FATIGUE", "WHEEZING",
-        "COUGHING", "SHORTNESS_OF_BREATH",
-    ]
+    risk_columns = ["chest_pain", "fatigue", "xray_abnormal"]
 
     available = [col for col in risk_columns if col in df.columns]
     if available:
-        df["HEALTH_RISK_SCORE"] = df[available].sum(axis=1)
-        logger.info(
-            f"Created feature: HEALTH_RISK_SCORE = sum({available})"
-        )
+        df["clinical_severity_score"] = df[available].sum(axis=1)
+        logger.info(f"Created feature: clinical_severity_score = sum({available})")
     return df
 
 
@@ -65,38 +56,31 @@ def _create_symptom_count(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _create_lifestyle_score(df: pd.DataFrame) -> pd.DataFrame:
+def _create_lifestyle_health_score(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Create a lifestyle risk score from behavioral factors.
+    Create a lifestyle health score (protective factors).
     """
     df = df.copy()
-    lifestyle_cols = ["SMOKING", "ALCOHOL_CONSUMING", "PEER_PRESSURE"]
+    lifestyle_cols = ["exercise_hours_per_week", "diet_quality", "healthcare_access"]
     available = [col for col in lifestyle_cols if col in df.columns]
 
     if available:
-        df["LIFESTYLE_RISK"] = df[available].sum(axis=1)
-        logger.info(
-            f"Created feature: LIFESTYLE_RISK = sum({available})"
-        )
+        df["lifestyle_health_score"] = df[available].sum(axis=1)
+        logger.info(f"Created feature: lifestyle_health_score = sum({available})")
     return df
 
 
-def _create_respiratory_score(df: pd.DataFrame) -> pd.DataFrame:
+def _create_respiratory_condition_score(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Create a respiratory symptom severity score.
+    Create a respiratory condition score from clinical history.
     """
     df = df.copy()
-    resp_cols = [
-        "WHEEZING", "COUGHING", "SHORTNESS_OF_BREATH",
-        "CHEST_PAIN", "SWALLOWING_DIFFICULTY",
-    ]
+    resp_cols = ["copd", "asthma", "previous_tb", "chronic_cough", "shortness_of_breath"]
     available = [col for col in resp_cols if col in df.columns]
 
     if available:
-        df["RESPIRATORY_SCORE"] = df[available].sum(axis=1)
-        logger.info(
-            f"Created feature: RESPIRATORY_SCORE = sum({available})"
-        )
+        df["respiratory_condition_score"] = df[available].sum(axis=1)
+        logger.info(f"Created feature: respiratory_condition_score = sum({available})")
     return df
 
 
@@ -166,11 +150,11 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"Input columns: {list(df.columns)}")
 
     # Build derived features
-    df = _create_smoking_risk(df)
-    df = _create_health_risk_score(df)
+    df = _create_smoking_impact(df)
+    df = _create_clinical_severity_score(df)
     df = _create_symptom_count(df)
-    df = _create_lifestyle_score(df)
-    df = _create_respiratory_score(df)
+    df = _create_lifestyle_health_score(df)
+    df = _create_respiratory_condition_score(df)
 
     # Drop redundant columns
     df = _drop_redundant_columns(df)

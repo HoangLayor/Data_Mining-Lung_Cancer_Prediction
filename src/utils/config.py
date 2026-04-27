@@ -33,31 +33,40 @@ RAW_DATA_FILE = RAW_DATA_DIR / "survey_lung_cancer.csv"
 PROCESSED_DATA_FILE = PROCESSED_DATA_DIR / "processed_data.csv"
 NEW_DATA_FILE = RAW_DATA_DIR / "new_data.csv"
 
-# Required columns in the raw dataset
+# Required columns in the raw dataset (30 total)
 REQUIRED_COLUMNS = [
-    "GENDER", "AGE", "SMOKING", "YELLOW_FINGERS", "ANXIETY",
-    "PEER_PRESSURE", "CHRONIC_DISEASE", "FATIGUE", "ALLERGY",
-    "WHEEZING", "ALCOHOL_CONSUMING", "COUGHING",
-    "SHORTNESS_OF_BREATH", "SWALLOWING_DIFFICULTY", "CHEST_PAIN",
-    "LUNG_CANCER",
+    "age", "gender", "education_years", "income_level", "smoker",
+    "smoking_years", "cigarettes_per_day", "pack_years", "passive_smoking",
+    "air_pollution_index", "occupational_exposure", "radon_exposure",
+    "family_history_cancer", "copd", "asthma", "previous_tb",
+    "chronic_cough", "chest_pain", "shortness_of_breath", "fatigue",
+    "bmi", "oxygen_saturation", "fev1_x10", "crp_level", "xray_abnormal",
+    "exercise_hours_per_week", "diet_quality", "alcohol_units_per_week",
+    "healthcare_access", "lung_cancer_risk"
 ]
 
 # Target column
-TARGET_COLUMN = "LUNG_CANCER"
+TARGET_COLUMN = "lung_cancer_risk"
 
-# Binary feature columns (encoded as 1=No, 2=Yes in raw data)
+# Binary feature columns (0=No, 1=Yes)
 BINARY_COLUMNS = [
-    "SMOKING", "YELLOW_FINGERS", "ANXIETY", "PEER_PRESSURE",
-    "CHRONIC_DISEASE", "FATIGUE", "ALLERGY", "WHEEZING",
-    "ALCOHOL_CONSUMING", "COUGHING", "SHORTNESS_OF_BREATH",
-    "SWALLOWING_DIFFICULTY", "CHEST_PAIN",
+    "gender", "smoker", "passive_smoking", "occupational_exposure",
+    "radon_exposure", "family_history_cancer", "copd", "asthma",
+    "previous_tb", "chronic_cough", "chest_pain", "shortness_of_breath",
+    "fatigue", "xray_abnormal"
 ]
 
 # Numerical columns for scaling
-NUMERICAL_COLUMNS = ["AGE"]
+NUMERICAL_COLUMNS = [
+    "age", "education_years", "income_level", "smoking_years",
+    "cigarettes_per_day", "pack_years", "air_pollution_index",
+    "bmi", "oxygen_saturation", "fev1_x10", "crp_level",
+    "exercise_hours_per_week", "diet_quality", "alcohol_units_per_week",
+    "healthcare_access"
+]
 
-# Categorical columns for encoding
-CATEGORICAL_COLUMNS = ["GENDER"]
+# Categorical columns
+CATEGORICAL_COLUMNS = []
 
 # ──────────────────────────────────────────────
 # Model Configuration
