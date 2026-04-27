@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/*.log
+
+# Data (keep directory structure)
+data/raw/*.csv
+data/processed/*.csv
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Models (keep directory structure)
+models/*.pkl
+models/*.json
+models/plots/*.png
+!models/.gitkeep
+!models/plots/.gitkeep
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables
+.env
