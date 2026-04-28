@@ -83,31 +83,10 @@ EVALUATION_REPORT_FILE = MODELS_DIR / "evaluation_report.json"
 MODEL_METADATA_FILE = MODELS_DIR / "model_metadata.json"
 
 # ──────────────────────────────────────────────
-# Hyperparameter Grids
+# Hyperparameter Optimization (Optuna)
 # ──────────────────────────────────────────────
-LOGISTIC_REGRESSION_PARAMS = {
-    "C": [0.01, 0.1, 1, 10, 100],
-    "penalty": ["l2"],
-    "solver": ["lbfgs"],
-    "max_iter": [1000],
-    "class_weight": ["balanced"],
-}
-
-RANDOM_FOREST_PARAMS = {
-    "n_estimators": [100, 200, 300],
-    "max_depth": [5, 10, 15, None],
-    "min_samples_split": [2, 5, 10],
-    "min_samples_leaf": [1, 2, 4],
-    "class_weight": ["balanced"],
-}
-
-XGBOOST_PARAMS = {
-    "n_estimators": [100, 200, 300],
-    "max_depth": [3, 5, 7],
-    "learning_rate": [0.01, 0.1, 0.3],
-    "subsample": [0.7, 0.8, 1.0],
-    "colsample_bytree": [0.7, 0.8, 1.0],
-}
+# We now use Optuna for hyperparameter optimization defined in src/models/train.py.
+# The previous fixed grids have been removed for flexibility.
 
 # ──────────────────────────────────────────────
 # Logging Configuration
