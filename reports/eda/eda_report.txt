@@ -1,0 +1,151 @@
+LUNG CANCER DATASET - EDA REPORT
+============================================================
+
+1) Dataset shape and dtypes
+------------------------------------------------------------
+Shape: (1000, 30)
+
+Columns and dtypes:
+age                          int64
+gender                       int64
+education_years              int64
+income_level                 int64
+smoker                       int64
+smoking_years              float64
+cigarettes_per_day         float64
+pack_years                 float64
+passive_smoking              int64
+air_pollution_index        float64
+occupational_exposure        int64
+radon_exposure               int64
+family_history_cancer        int64
+copd                         int64
+asthma                       int64
+previous_tb                  int64
+chronic_cough                int64
+chest_pain                   int64
+shortness_of_breath          int64
+fatigue                      int64
+bmi                        float64
+oxygen_saturation          float64
+fev1_x10                   float64
+crp_level                  float64
+xray_abnormal                int64
+exercise_hours_per_week    float64
+diet_quality                 int64
+alcohol_units_per_week     float64
+healthcare_access            int64
+lung_cancer_risk             int64
+
+2) Target distribution
+------------------------------------------------------------
+Counts:
+lung_cancer_risk
+0    791
+1    209
+
+Percentages (%):
+lung_cancer_risk
+0    79.1
+1    20.9
+
+3) Missing values by column
+------------------------------------------------------------
+Missing count:
+age                        0
+gender                     0
+education_years            0
+income_level               0
+smoker                     0
+smoking_years              0
+cigarettes_per_day         0
+pack_years                 0
+passive_smoking            0
+air_pollution_index        0
+occupational_exposure      0
+radon_exposure             0
+family_history_cancer      0
+copd                       0
+asthma                     0
+previous_tb                0
+chronic_cough              0
+chest_pain                 0
+shortness_of_breath        0
+fatigue                    0
+bmi                        0
+oxygen_saturation          0
+fev1_x10                   0
+crp_level                  0
+xray_abnormal              0
+exercise_hours_per_week    0
+diet_quality               0
+alcohol_units_per_week     0
+healthcare_access          0
+lung_cancer_risk           0
+
+Missing percentage (%):
+age                        0.0
+gender                     0.0
+education_years            0.0
+income_level               0.0
+smoker                     0.0
+smoking_years              0.0
+cigarettes_per_day         0.0
+pack_years                 0.0
+passive_smoking            0.0
+air_pollution_index        0.0
+occupational_exposure      0.0
+radon_exposure             0.0
+family_history_cancer      0.0
+copd                       0.0
+asthma                     0.0
+previous_tb                0.0
+chronic_cough              0.0
+chest_pain                 0.0
+shortness_of_breath        0.0
+fatigue                    0.0
+bmi                        0.0
+oxygen_saturation          0.0
+fev1_x10                   0.0
+crp_level                  0.0
+xray_abnormal              0.0
+exercise_hours_per_week    0.0
+diet_quality               0.0
+alcohol_units_per_week     0.0
+healthcare_access          0.0
+lung_cancer_risk           0.0
+
+4) Numerical summary
+------------------------------------------------------------
+                          count       mean        std        min        25%        50%        75%         max
+age                      1000.0  52.881000  20.958915  18.000000  34.750000  52.500000  71.000000   89.000000
+gender                   1000.0   0.497000   0.500241   0.000000   0.000000   0.000000   1.000000    1.000000
+education_years          1000.0  14.412000   4.029453   8.000000  11.000000  14.000000  18.000000   21.000000
+income_level             1000.0   3.028000   1.425920   1.000000   2.000000   3.000000   4.000000    5.000000
+smoker                   1000.0   0.423000   0.494283   0.000000   0.000000   0.000000   1.000000    1.000000
+smoking_years            1000.0   7.593000  13.341039   0.000000   0.000000   0.000000  10.000000   72.000000
+cigarettes_per_day       1000.0   8.701000  12.411755   0.000000   0.000000   0.000000  17.000000   39.000000
+pack_years               1000.0   7.754600  16.077034   0.000000   0.000000   0.000000   7.037500  106.400000
+passive_smoking          1000.0   0.296000   0.456719   0.000000   0.000000   0.000000   1.000000    1.000000
+air_pollution_index      1000.0  54.594616  25.949824  10.352654  31.903926  54.340739  76.583194   99.951461
+occupational_exposure    1000.0   0.211000   0.408223   0.000000   0.000000   0.000000   0.000000    1.000000
+radon_exposure           1000.0   0.079000   0.269874   0.000000   0.000000   0.000000   0.000000    1.000000
+family_history_cancer    1000.0   0.145000   0.352277   0.000000   0.000000   0.000000   0.000000    1.000000
+copd                     1000.0   0.131000   0.337569   0.000000   0.000000   0.000000   0.000000    1.000000
+asthma                   1000.0   0.103000   0.304111   0.000000   0.000000   0.000000   0.000000    1.000000
+previous_tb              1000.0   0.058000   0.233860   0.000000   0.000000   0.000000   0.000000    1.000000
+chronic_cough            1000.0   0.200000   0.400200   0.000000   0.000000   0.000000   0.000000    1.000000
+chest_pain               1000.0   0.161000   0.367715   0.000000   0.000000   0.000000   0.000000    1.000000
+shortness_of_breath      1000.0   0.199000   0.399448   0.000000   0.000000   0.000000   0.000000    1.000000
+fatigue                  1000.0   0.309000   0.462312   0.000000   0.000000   0.000000   1.000000    1.000000
+bmi                      1000.0  26.768443   4.776453  18.004292  22.829250  27.068073  30.687069   34.985543
+oxygen_saturation        1000.0  96.037517   2.279638  92.063633  94.147303  96.034783  97.948036   99.991544
+fev1_x10                 1000.0  35.593765   8.839199  20.018349  27.810183  35.709570  43.213670   49.996143
+crp_level                1000.0   5.027030   2.832012   0.009990   2.702223   4.994387   7.456607    9.992995
+xray_abnormal            1000.0   0.116000   0.320385   0.000000   0.000000   0.000000   0.000000    1.000000
+exercise_hours_per_week  1000.0   7.768155   4.406092   0.000722   3.977437   7.954639  11.620752   14.994845
+diet_quality             1000.0   3.154000   1.428399   1.000000   2.000000   3.000000   4.000000    5.000000
+alcohol_units_per_week   1000.0  12.685087   7.224206   0.005035   6.538338  12.757924  18.859561   24.995554
+healthcare_access        1000.0   2.959000   1.418919   1.000000   2.000000   3.000000   4.000000    5.000000
+lung_cancer_risk         1000.0   0.209000   0.406798   0.000000   0.000000   0.000000   0.000000    1.000000
+
