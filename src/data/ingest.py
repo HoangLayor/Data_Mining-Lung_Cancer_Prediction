@@ -19,7 +19,10 @@ from src.utils.config import (
     CATEGORICAL_COLUMNS,
     NUMERICAL_COLUMNS,
     TARGET_COLUMN,
+    DATABASE_URL,
 )
+from src.utils.database import get_db
+from src.utils.models import Patient
 
 logger = get_logger(__name__)
 
@@ -52,9 +55,37 @@ def load_csv(path: Optional[str] = None) -> pd.DataFrame:
         return df
     except pd.errors.EmptyDataError:
         logger.error(f"Empty file: {file_path}")
-        raise
     except Exception as e:
         logger.error(f"Error loading CSV: {e}")
+        raise
+
+
+def load_from_db() -> pd.DataFrame:
+    """
+    Load dataset from the PostgreSQL 'patients' table.
+
+    Returns:
+        DataFrame with the loaded data.
+    """
+    logger.info("Starting data ingestion from PostgreSQL database...")
+    
+    try:
+        with get_db() as db:
+            query = db.query(Patient)
+            df = pd.read_sql(query.statement, db.bind)
+        
+        # Remove metadata columns not needed for training
+        if "id" in df.columns:
+            df = df.drop(columns=["id"])
+        if "source" in df.columns:
+            df = df.drop(columns=["source"])
+        if "created_at" in df.columns:
+            df = df.drop(columns=["created_at"])
+            
+        logger.info(f"Successfully loaded {len(df)} records from database")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading from database: {e}")
         raise
 
 

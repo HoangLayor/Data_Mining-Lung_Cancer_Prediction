@@ -41,8 +41,10 @@ from src.utils.config import (
     METRICS_FILE,
     BEST_MODEL_FILE,
     MODEL_METADATA_FILE,
-    MODEL_METADATA_FILE,
+    DATABASE_URL,
 )
+from src.utils.database import get_db
+from src.utils.models import ModelMetadata
 
 logger = get_logger(__name__)
 
@@ -67,7 +69,7 @@ def _get_models() -> Dict[str, Any]:
     }
 
 
-def _get_objective(model_name: str, X: pd.DataFrame, y: pd.Series):
+def _get_objective(model_name: str, X: pd.DataFrame, y: pd.Series, use_smote: bool = True):
     """
     Create an objective function for Optuna.
     
@@ -75,6 +77,7 @@ def _get_objective(model_name: str, X: pd.DataFrame, y: pd.Series):
         model_name: Name of the model.
         X: Feature matrix.
         y: Target vector.
+        use_smote: Whether to apply SMOTE within CV.
         
     Returns:
         Objective function for Optuna.
@@ -115,10 +118,20 @@ def _get_objective(model_name: str, X: pd.DataFrame, y: pd.Series):
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
+        # Use pipeline if SMOTE is requested
+        if use_smote:
+            pipeline = ImbPipeline([
+                ("smote", SMOTE(random_state=RANDOM_SEED)),
+                ("model", model)
+            ])
+            eval_obj = pipeline
+        else:
+            eval_obj = model
+
         # Cross-validation
         skf = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_SEED)
         # We optimize for recall
-        scores = cross_val_score(model, X, y, cv=skf, scoring="recall", n_jobs=-1)
+        scores = cross_val_score(eval_obj, X, y, cv=skf, scoring="recall", n_jobs=-1)
         return scores.mean()
 
     return objective
@@ -129,6 +142,7 @@ def cross_validate_model(
     X: pd.DataFrame,
     y: pd.Series,
     cv_folds: int = CV_FOLDS,
+    use_smote: bool = True,
 ) -> Dict[str, float]:
     """
     Perform Stratified K-Fold Cross Validation.
@@ -138,11 +152,22 @@ def cross_validate_model(
         X: Feature matrix.
         y: Target vector.
         cv_folds: Number of folds.
+        use_smote: Whether to apply SMOTE within each fold.
 
     Returns:
         Dictionary with mean metrics across folds.
     """
     skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=RANDOM_SEED)
+
+    # Use pipeline if SMOTE is requested to avoid data leakage
+    if use_smote:
+        pipeline = ImbPipeline([
+            ("smote", SMOTE(random_state=RANDOM_SEED)),
+            ("model", model)
+        ])
+        eval_obj = pipeline
+    else:
+        eval_obj = model
 
     scorers = {
         "recall": make_scorer(recall_score),
@@ -153,7 +178,8 @@ def cross_validate_model(
 
     results = {}
     for metric_name, scorer in scorers.items():
-        scores = cross_val_score(model, X, y, cv=skf, scoring=scorer)
+        # Note: cross_val_score will use the pipeline (SMOTE) only on the training folds
+        scores = cross_val_score(eval_obj, X, y, cv=skf, scoring=scorer, n_jobs=-1)
         results[metric_name] = {
             "mean": float(np.mean(scores)),
             "std": float(np.std(scores)),
@@ -211,12 +237,7 @@ def train_model(
     logger.info("=" * 60)
     logger.info("Starting model training pipeline...")
     logger.info(f"Training data shape: X={X_train.shape}, y={y_train.shape}")
-
-    # Apply SMOTE if requested
-    if use_smote:
-        X_train_balanced, y_train_balanced = _apply_smote(X_train, y_train)
-    else:
-        X_train_balanced, y_train_balanced = X_train, y_train
+    logger.info(f"Class distribution: {y_train.value_counts().to_dict()}")
 
     models = _get_models()
     
@@ -236,7 +257,7 @@ def train_model(
         try:
             # Create study
             study = optuna.create_study(direction="maximize")
-            objective_func = _get_objective(name, X_train_balanced, y_train_balanced)
+            objective_func = _get_objective(name, X_train, y_train, use_smote=use_smote)
             
             # Run optimization
             study.optimize(objective_func, n_trials=n_iter)
@@ -255,10 +276,17 @@ def train_model(
                 best_params.update({"eval_metric": "logloss"})
                 tuned_model = XGBClassifier(**best_params, random_state=RANDOM_SEED)
             
-            tuned_model.fit(X_train_balanced, y_train_balanced)
+            # Re-train best model on full training set (with SMOTE if requested)
+            if use_smote:
+                smote = SMOTE(random_state=RANDOM_SEED)
+                X_train_final, y_train_final = smote.fit_resample(X_train, y_train)
+            else:
+                X_train_final, y_train_final = X_train, y_train
+
+            tuned_model.fit(X_train_final, y_train_final)
             
-            # Evaluate best model with full CV
-            cv_results = cross_validate_model(tuned_model, X_train_balanced, y_train_balanced)
+            # Evaluate best model with full CV using pipeline to avoid leakage
+            cv_results = cross_validate_model(tuned_model, X_train, y_train, use_smote=use_smote)
 
             elapsed = time.time() - start_time
 
@@ -295,6 +323,7 @@ def train_model(
     # Save results
     all_results["best_model"] = best_model_name
     all_results["best_recall"] = best_recall
+    all_results["feature_names"] = list(X_train.columns)
 
     return best_model, all_results
 
@@ -341,28 +370,52 @@ def save_model(
         json.dump(metrics_output, f, indent=2, default=str)
     logger.info(f"Metrics saved to: {METRICS_FILE}")
 
-    # Save metadata
+    # Save metadata to JSON (as backup)
     metadata = {
         "version": version,
         "date": datetime.now().isoformat(),
         "model_type": type(model).__name__,
         "dataset_size": dataset_size,
+        "feature_names": list(metrics.get("feature_names", [])),
         "metrics": {
             k: v for k, v in metrics.items()
-            if k not in ["best_model", "best_recall"]
+            if k not in ["best_model", "best_recall", "feature_names"]
         },
     }
 
-    # Load existing metadata or create new
-    all_metadata = []
-    if MODEL_METADATA_FILE.exists():
-        with open(MODEL_METADATA_FILE, "r") as f:
-            all_metadata = json.load(f)
+    # Save to database
+    try:
+        from src.utils.models import ModelMetadata
+        with get_db() as db:
+            # Check if version exists to update or insert
+            db_meta = ModelMetadata(
+                version=version,
+                model_type=type(model).__name__,
+                dataset_size=dataset_size,
+                feature_names=metadata["feature_names"],
+                metrics=metadata["metrics"],
+                parameters=metrics.get(metrics.get("best_model", ""), {}).get("best_params", {}),
+                file_path=str(model_path)
+            )
+            db.merge(db_meta)
+            db.commit()
+            logger.info(f"Model metadata saved to database (version {version}) [OK]")
+    except Exception as e:
+        logger.error(f"Failed to save metadata to database: {e}")
 
-    all_metadata.append(metadata)
-    with open(MODEL_METADATA_FILE, "w") as f:
-        json.dump(all_metadata, f, indent=2, default=str)
-    logger.info(f"Model metadata saved to: {MODEL_METADATA_FILE}")
+    # Legacy JSON support
+    try:
+        all_metadata = []
+        if MODEL_METADATA_FILE.exists():
+            with open(MODEL_METADATA_FILE, "r") as f:
+                all_metadata = json.load(f)
+        
+        all_metadata.append(metadata)
+        with open(MODEL_METADATA_FILE, "w") as f:
+            json.dump(all_metadata, f, indent=2)
+        logger.info(f"Model metadata saved to: {MODEL_METADATA_FILE}")
+    except Exception as e:
+        logger.error(f"Failed to save JSON metadata: {e}")
 
     return model_path
 

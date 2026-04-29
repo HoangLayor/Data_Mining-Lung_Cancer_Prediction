@@ -29,7 +29,7 @@ for d in [RAW_DATA_DIR, PROCESSED_DATA_DIR, MODELS_DIR, PLOTS_DIR, LOGS_DIR]:
 # ──────────────────────────────────────────────
 # Data Configuration
 # ──────────────────────────────────────────────
-RAW_DATA_FILE = RAW_DATA_DIR / "survey_lung_cancer.csv"
+RAW_DATA_FILE = RAW_DATA_DIR / "lung_cancer.csv"
 PROCESSED_DATA_FILE = PROCESSED_DATA_DIR / "processed_data.csv"
 NEW_DATA_FILE = RAW_DATA_DIR / "new_data.csv"
 
@@ -96,7 +96,14 @@ LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # ──────────────────────────────────────────────
-# API Configuration
+# API & Database Configuration
 # ──────────────────────────────────────────────
 API_HOST = "0.0.0.0"
 API_PORT = 8000
+
+# PostgreSQL Configuration
+# Format: postgresql+psycopg2://user:password@host:port/dbname
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://postgres:123456@localhost:5433/lung_cancer_db"
+)

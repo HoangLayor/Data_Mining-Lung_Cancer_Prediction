@@ -24,7 +24,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.logger import get_logger
-from src.utils.config import NEW_DATA_FILE, RAW_DATA_DIR
+from src.utils.config import NEW_DATA_FILE, RAW_DATA_DIR, DATABASE_URL
+from src.utils.database import get_db
+from src.utils.models import Patient
 from src.models.predict import predict, reload_model
 
 logger = get_logger("api")
@@ -58,48 +60,70 @@ app.add_middleware(
 # Pydantic Schemas
 # ──────────────────────────────────────────────
 class PatientData(BaseModel):
-    """Schema for patient input data."""
+    """Schema for patient input data (29 features)."""
 
-    GENDER: str = Field(..., description="Patient gender: M or F")
-    AGE: int = Field(..., ge=1, le=120, description="Patient age (1-120)")
-    SMOKING: int = Field(..., ge=1, le=2, description="Smoking: 1=No, 2=Yes")
-    YELLOW_FINGERS: int = Field(..., ge=1, le=2, description="Yellow fingers: 1=No, 2=Yes")
-    ANXIETY: int = Field(..., ge=1, le=2, description="Anxiety: 1=No, 2=Yes")
-    PEER_PRESSURE: int = Field(..., ge=1, le=2, description="Peer pressure: 1=No, 2=Yes")
-    CHRONIC_DISEASE: int = Field(..., ge=1, le=2, description="Chronic disease: 1=No, 2=Yes")
-    FATIGUE: int = Field(..., ge=1, le=2, description="Fatigue: 1=No, 2=Yes")
-    ALLERGY: int = Field(..., ge=1, le=2, description="Allergy: 1=No, 2=Yes")
-    WHEEZING: int = Field(..., ge=1, le=2, description="Wheezing: 1=No, 2=Yes")
-    ALCOHOL_CONSUMING: int = Field(..., ge=1, le=2, description="Alcohol consuming: 1=No, 2=Yes")
-    COUGHING: int = Field(..., ge=1, le=2, description="Coughing: 1=No, 2=Yes")
-    SHORTNESS_OF_BREATH: int = Field(..., ge=1, le=2, description="Shortness of breath: 1=No, 2=Yes")
-    SWALLOWING_DIFFICULTY: int = Field(..., ge=1, le=2, description="Swallowing difficulty: 1=No, 2=Yes")
-    CHEST_PAIN: int = Field(..., ge=1, le=2, description="Chest pain: 1=No, 2=Yes")
-
-    @validator("GENDER")
-    def validate_gender(cls, v):
-        if v.upper() not in ("M", "F"):
-            raise ValueError("GENDER must be 'M' or 'F'")
-        return v.upper()
+    age: int = Field(..., ge=1, le=120, description="Patient age (1-120)")
+    gender: int = Field(..., description="Gender: 0=Female, 1=Male")
+    education_years: int = Field(..., ge=0, le=30, description="Total years of formal education")
+    income_level: int = Field(..., ge=1, le=5, description="Income level (1-5)")
+    smoker: int = Field(..., ge=0, le=1, description="Smoker: 0=No, 1=Yes")
+    smoking_years: float = Field(..., ge=0, description="Total number of years smoked")
+    cigarettes_per_day: float = Field(..., ge=0, description="Average cigarettes per day")
+    pack_years: float = Field(..., ge=0, description="Cumulative smoking exposure (pack-years)")
+    passive_smoking: int = Field(..., ge=0, le=1, description="Exposure to secondhand smoke (0/1)")
+    air_pollution_index: float = Field(..., ge=0, le=100, description="Air quality exposure index (0-100)")
+    occupational_exposure: int = Field(..., ge=0, le=1, description="Hazardous substance exposure at work (0/1)")
+    radon_exposure: int = Field(..., ge=0, le=1, description="History of radon exposure (0/1)")
+    family_history_cancer: int = Field(..., ge=0, le=1, description="Family history of cancer (0/1)")
+    copd: int = Field(..., ge=0, le=1, description="Diagnosis of COPD (0/1)")
+    asthma: int = Field(..., ge=0, le=1, description="History of asthma (0/1)")
+    previous_tb: int = Field(..., ge=0, le=1, description="History of tuberculosis (0/1)")
+    chronic_cough: int = Field(..., ge=0, le=1, description="Long-term cough symptoms (0/1)")
+    chest_pain: int = Field(..., ge=0, le=1, description="Reports of chest pain (0/1)")
+    shortness_of_breath: int = Field(..., ge=0, le=1, description="Breathing difficulty (0/1)")
+    fatigue: int = Field(..., ge=0, le=1, description="Persistent fatigue symptoms (0/1)")
+    bmi: float = Field(..., ge=10, le=60, description="Body mass index")
+    oxygen_saturation: float = Field(..., ge=70, le=100, description="Blood oxygen saturation level (%)")
+    fev1_x10: float = Field(..., description="Lung function measure (FEV1)")
+    crp_level: float = Field(..., description="C-reactive protein level (inflammation)")
+    xray_abnormal: int = Field(..., ge=0, le=1, description="Abnormal imaging findings (0/1)")
+    exercise_hours_per_week: float = Field(..., ge=0, description="Weekly physical activity duration")
+    diet_quality: int = Field(..., ge=1, le=5, description="Overall dietary quality (1-5)")
+    alcohol_units_per_week: float = Field(..., ge=0, description="Average alcohol consumption per week")
+    healthcare_access: int = Field(..., ge=1, le=5, description="Access to healthcare services (1-5)")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "GENDER": "M",
-                "AGE": 65,
-                "SMOKING": 2,
-                "YELLOW_FINGERS": 2,
-                "ANXIETY": 1,
-                "PEER_PRESSURE": 1,
-                "CHRONIC_DISEASE": 2,
-                "FATIGUE": 2,
-                "ALLERGY": 1,
-                "WHEEZING": 2,
-                "ALCOHOL_CONSUMING": 2,
-                "COUGHING": 2,
-                "SHORTNESS_OF_BREATH": 2,
-                "SWALLOWING_DIFFICULTY": 1,
-                "CHEST_PAIN": 2,
+                "age": 62,
+                "gender": 1,
+                "education_years": 16,
+                "income_level": 3,
+                "smoker": 1,
+                "smoking_years": 25.0,
+                "cigarettes_per_day": 20.0,
+                "pack_years": 25.0,
+                "passive_smoking": 0,
+                "air_pollution_index": 45.0,
+                "occupational_exposure": 1,
+                "radon_exposure": 0,
+                "family_history_cancer": 1,
+                "copd": 0,
+                "asthma": 0,
+                "previous_tb": 0,
+                "chronic_cough": 1,
+                "chest_pain": 1,
+                "shortness_of_breath": 0,
+                "fatigue": 1,
+                "bmi": 26.5,
+                "oxygen_saturation": 98.0,
+                "fev1_x10": 38.0,
+                "crp_level": 1.5,
+                "xray_abnormal": 0,
+                "exercise_hours_per_week": 3.0,
+                "diet_quality": 4,
+                "alcohol_units_per_week": 5.0,
+                "healthcare_access": 4
             }
         }
 
@@ -187,7 +211,7 @@ async def predict_endpoint(patient: PatientData):
     Takes patient survey data and returns a prediction with
     probability and risk level.
     """
-    logger.info(f"Prediction request received for patient: AGE={patient.AGE}, GENDER={patient.GENDER}")
+    logger.info(f"Prediction request received for patient: age={patient.age}, gender={patient.gender}")
 
     try:
         # Convert Pydantic model to dict
@@ -224,24 +248,18 @@ async def update_data(request: UpdateDataRequest):
     logger.info(f"Received {len(request.records)} new records for retraining")
 
     try:
-        new_df = pd.DataFrame(request.records)
+        with get_db() as db:
+            for rec in request.records:
+                # Ensure record has correct source
+                patient = Patient(**rec, source="api")
+                db.add(patient)
+            db.commit()
 
-        # Append to existing file or create new
-        RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
-        if NEW_DATA_FILE.exists():
-            existing = pd.read_csv(NEW_DATA_FILE)
-            combined = pd.concat([existing, new_df], ignore_index=True)
-            combined.to_csv(NEW_DATA_FILE, index=False)
-            total = len(combined)
-        else:
-            new_df.to_csv(NEW_DATA_FILE, index=False)
-            total = len(new_df)
-
-        logger.info(f"Data saved to {NEW_DATA_FILE}. Total records: {total}")
+        logger.info(f"Successfully saved {len(request.records)} records to database")
 
         return StatusResponse(
             status="success",
-            message=f"Saved {len(request.records)} records. Total: {total}",
+            message=f"Saved {len(request.records)} records to PostgreSQL database",
             timestamp=datetime.now().isoformat(),
         )
     except Exception as e:

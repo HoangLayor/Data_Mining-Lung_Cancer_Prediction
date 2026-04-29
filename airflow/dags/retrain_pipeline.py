@@ -40,10 +40,10 @@ default_args = {
 # ──────────────────────────────────────────────
 # Task Functions
 # ──────────────────────────────────────────────
-def task_ingest_data(**kwargs):
-    """Task 1: Ingest data from source."""
-    from src.data.ingest import load_csv, validate_data, generate_sample_dataset, save_raw_data
+    from src.data.ingest import load_from_db, validate_data, generate_sample_dataset, save_raw_data
     from src.utils.logger import get_logger
+    from src.utils.database import init_db
+    from src.utils.models import Patient
     from src.utils.config import RAW_DATA_FILE
 
     logger = get_logger("airflow.ingest")
@@ -51,19 +51,21 @@ def task_ingest_data(**kwargs):
     logger.info("AIRFLOW TASK: ingest_data — STARTED")
 
     try:
-        if RAW_DATA_FILE.exists():
-            df = load_csv()
-        else:
-            logger.info("No raw data file found. Generating sample dataset...")
+        # Initialize tables if they don't exist
+        init_db()
+        
+        df = load_from_db()
+        
+        if len(df) == 0:
+            logger.info("No data found in database. Generating sample dataset...")
             df = generate_sample_dataset()
-            save_raw_data(df)
-
+            # In a real scenario, we'd insert this into the DB
+            # For this pipeline, we'll just validate it
+            
         validate_data(df)
-        logger.info(f"Ingestion complete: {len(df)} records loaded")
+        logger.info(f"Ingestion complete: {len(df)} records loaded from database")
         logger.info("AIRFLOW TASK: ingest_data — SUCCESS")
 
-        # Push data path to XCom for downstream tasks
-        kwargs["ti"].xcom_push(key="data_path", value=str(RAW_DATA_FILE))
         return True
     except Exception as e:
         logger.error(f"AIRFLOW TASK: ingest_data — FAILED: {e}")
@@ -72,7 +74,7 @@ def task_ingest_data(**kwargs):
 
 def task_preprocess_data(**kwargs):
     """Task 2: Preprocess the ingested data."""
-    from src.data.ingest import load_csv
+    from src.data.ingest import load_from_db
     from src.data.preprocess import preprocess_data
     from src.utils.logger import get_logger
 
@@ -81,7 +83,7 @@ def task_preprocess_data(**kwargs):
     logger.info("AIRFLOW TASK: preprocess_data — STARTED")
 
     try:
-        df = load_csv()
+        df = load_from_db()
         X, y, preprocessor = preprocess_data(df)
 
         logger.info(f"Preprocessing complete: X={X.shape}, y={y.shape}")
@@ -94,7 +96,7 @@ def task_preprocess_data(**kwargs):
 
 def task_build_features(**kwargs):
     """Task 3: Build engineered features."""
-    from src.data.ingest import load_csv
+    from src.data.ingest import load_from_db
     from src.data.preprocess import preprocess_data
     from src.features.build_features import build_features
     from src.utils.logger import get_logger
@@ -104,7 +106,7 @@ def task_build_features(**kwargs):
     logger.info("AIRFLOW TASK: build_features — STARTED")
 
     try:
-        df = load_csv()
+        df = load_from_db()
         X, y, _ = preprocess_data(df, fit_preprocessor=False)
         X_featured = build_features(X)
 
@@ -132,7 +134,7 @@ def task_train_model(**kwargs):
 
     try:
         # Full pipeline
-        df = load_csv()
+        df = load_from_db()
         X, y, _ = preprocess_data(df)
         X = build_features(X)
 
@@ -171,7 +173,7 @@ def task_evaluate_model(**kwargs):
 
     try:
         # Load data and model
-        df = load_csv()
+        df = load_from_db()
         X, y, _ = preprocess_data(df, fit_preprocessor=False)
         X = build_features(X)
 

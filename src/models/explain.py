@@ -49,12 +49,17 @@ def explain_global(
 
     # Create SHAP explainer
     try:
-        # Try TreeExplainer for tree-based models
-        explainer = shap.TreeExplainer(model)
-        logger.info("Using TreeExplainer")
-    except Exception:
+        from sklearn.linear_model import LogisticRegression
+        if isinstance(model, LogisticRegression):
+            explainer = shap.LinearExplainer(model, X)
+            logger.info("Using LinearExplainer for Logistic Regression")
+        else:
+            # Try TreeExplainer for tree-based models
+            explainer = shap.TreeExplainer(model)
+            logger.info("Using TreeExplainer")
+    except Exception as e:
         # Fall back to KernelExplainer for other models
-        logger.info("TreeExplainer not supported, using KernelExplainer (slower)...")
+        logger.info(f"Preferred explainer not supported ({e}), using KernelExplainer (slower)...")
         # Use a small background sample for efficiency
         background = shap.sample(X, min(100, len(X)))
         explainer = shap.KernelExplainer(model.predict_proba, background)
