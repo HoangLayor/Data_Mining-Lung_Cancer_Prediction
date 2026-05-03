@@ -20,7 +20,7 @@ with DAG(dag_id="catboost_training", start_date=datetime(2026, 4, 27), schedule=
         image="bitis2004/airflow-catboost-stage:0.0.1",
         api_version="auto",
         auto_remove=True,
-        network_mode="test_dm_data_network",
+        network_mode="data_mining-lung_cancer_prediction_data_network",
         docker_url="tcp://docker-proxy:2375",
         mount_tmp_dir=False,
         mounts=[
