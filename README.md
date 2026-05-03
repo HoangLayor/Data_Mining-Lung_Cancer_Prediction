@@ -1,6 +1,6 @@
-# Lung Cancer Risk Prediction
+# Lung Cancer Risk Prediction (MLOps Platform)
 
-A production-ready machine learning pipeline for predicting lung cancer risk based on patient survey data. Built with Python, scikit-learn, XGBoost, FastAPI, and Apache Airflow.
+A production-ready machine learning pipeline for predicting lung cancer risk based on patient survey data. Built with Python, scikit-learn, XGBoost, FastAPI, and orchestrated with Apache Airflow and Docker Compose.
 
 ---
 
@@ -9,13 +9,12 @@ A production-ready machine learning pipeline for predicting lung cancer risk bas
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
-- [Pipeline Stages](#pipeline-stages)
+- [Quick Start Guide (Docker)](#quick-start-guide-docker)
+- [Pipeline Stages & Retraining Workflow](#pipeline-stages--retraining-workflow)
 - [API Usage](#api-usage)
 - [Model Performance](#model-performance)
-- [Airflow Orchestration](#airflow-orchestration)
-- [Testing](#testing)
-- [Docker Deployment](#docker-deployment)
+- [Dataset Details](#dataset-details)
+- [Disclaimer](#disclaimer)
 
 ---
 
@@ -23,190 +22,166 @@ A production-ready machine learning pipeline for predicting lung cancer risk bas
 
 This project implements an end-to-end ML pipeline for lung cancer risk prediction using survey-based patient data. The system includes:
 
-- **Data Pipeline**: Ingestion, validation, preprocessing, and feature engineering
-- **Model Training**: Logistic Regression, Random Forest, and XGBoost with hyperparameter tuning
-- **Evaluation**: Comprehensive metrics, ROC/PR curves, threshold optimization
-- **Explainability**: SHAP-based global and local feature importance
-- **API**: FastAPI REST endpoints for real-time predictions
-- **Orchestration**: Airflow DAG for automated retraining
-- **Versioning**: File-based model versioning with metadata tracking
+- **Data Pipeline**: Ingestion, validation, preprocessing, and feature engineering.
+- **Model Training**: Logistic Regression, Random Forest, and XGBoost with automated hyperparameter tuning.
+- **Evaluation**: Comprehensive metrics, ROC/PR curves, threshold optimization.
+- **Explainability**: SHAP-based global and local feature importance.
+- **API & UI**: FastAPI REST endpoints and a modern Web Dashboard for real-time predictions.
+- **Orchestration**: Airflow DAGs for automated retraining.
+- **Versioning**: Model registry and experiment tracking via MLflow.
 
 ---
 
 ## 🏗️ Architecture
 
-```
-┌─────────────┐    ┌──────────────┐    ┌─────────────────┐
-│  Raw Data   │───▶│ Preprocessing│───▶│   Feature Eng.  │
-│  (CSV/API)  │    │  & Cleaning  │    │  (Derived Feats)│
-└─────────────┘    └──────────────┘    └────────┬────────┘
-                                                │
-                   ┌──────────────┐    ┌────────▼────────┐
-                   │  Evaluation  │◀───│  Model Training │
-                   │  & Plotting  │    │ (LR/RF/XGBoost) │
-                   └──────┬───────┘    └─────────────────┘
-                          │
-              ┌───────────▼───────────┐
-              │   FastAPI Serving     │
-              │   POST /predict       │
-              └───────────────────────┘
+```mermaid
+graph TD
+    A[Patient Data / CSV] -->|Ingest| B(API /ingest-data)
+    B -->|Save Raw| C[data/raw/new_data.csv]
+    
+    subgraph Airflow Pipelines
+        D[Preprocess DAG] --> E[Feature Eng DAG]
+        E --> F[Training DAG]
+        F --> G[Promotion DAG]
+    end
+    
+    C -->|Trigger| D
+    F -->|Log Metrics| H[(MLflow Registry)]
+    G -->|Promote Best Model| H
+    
+    subgraph Serving Layer
+        I[FastAPI Serving] -->|Load Production Model| H
+        I -->|SHAP Analysis| J[AI Explanation]
+        I -->|Web Interface| K[Browser]
+    end
 ```
 
 ---
 
 ## 📁 Project Structure
 
-```
-project/
-├── data/
-│   ├── raw/                    # Raw CSV datasets
-│   └── processed/              # Cleaned & transformed data
-├── src/
-│   ├── data/
-│   │   ├── ingest.py           # Data loading & validation
-│   │   └── preprocess.py       # Cleaning, encoding, scaling
-│   ├── features/
-│   │   └── build_features.py   # Feature engineering
-│   ├── models/
-│   │   ├── train.py            # Model training pipeline
-│   │   ├── evaluate.py         # Evaluation & visualization
-│   │   ├── predict.py          # Inference module
-│   │   └── explain.py          # SHAP explainability
-│   └── utils/
-│       ├── config.py           # Central configuration
-│       └── logger.py           # Logging utility
-├── api/
-│   └── main.py                 # FastAPI application
-├── airflow/dags/
-│   └── retrain_pipeline.py     # Airflow retraining DAG
-├── models/                     # Saved model artifacts
-├── logs/                       # Application logs
-├── tests/                      # pytest test suite
-├── requirements.txt
-├── Dockerfile
-└── README.md
+```text
+├── airflow/                    # Airflow configurations & DAGs
+│   ├── dags/                   # Orchestration workflows (XGBoost, RF, LR)
+│   └── plugins/                # Custom operators and hooks
+├── api/                        # FastAPI application & Serving logic
+│   └── app.py                  # API endpoints (Predict, Explain, Ingest)
+├── frontend/                   # Web Interface
+│   ├── static/                 # CSS, JS, Icons
+│   └── templates/              # HTML Templates
+├── src/                        # Core Python Modules
+│   ├── data/                   # Ingestion & Preprocessing
+│   ├── features/               # Feature Engineering
+│   ├── models/                 # Training, Evaluation, SHAP Explanation
+│   └── utils/                  # Config, Logger, DB helpers
+├── data/                       # Data volume (Raw, Processed, Models)
+├── docker-compose.yml          # Full stack orchestration
+└── requirements.txt            # Project dependencies
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start Guide (Docker)
 
-### 1. Clone & Setup
+The entire platform is orchestrated with Docker Compose. Please follow these steps carefully to set up your environment.
 
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+### 1. Prerequisites
 
-# Install dependencies
-pip install -r requirements.txt
+- Docker and Docker Compose installed on your system.
+- Git (to clone the repository).
+
+### 2. Environment Setup (.env)
+
+Before running Docker, you must create an environment configuration file. In the root directory of the project (where `docker-compose.yml` is located), create a file named `.env` and add the following configuration:
+
+```env
+# Airflow settings
+AIRFLOW_UID=50000
+AIRFLOW_PROJ_DIR=.
+
+# Database credentials
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=123456
+POSTGRES_DB=lung_cancer_db
+
+# Host mapping for training
+HOST_TRAINING_DIR=/tmp
 ```
 
-### 2. Generate Sample Data & Train
+### 3. Launch the Stack
+
+Once the `.env` file is ready, open your terminal, navigate to the project root, and run:
 
 ```bash
-# Generate synthetic dataset
-python -m src.data.ingest
-
-# Run full pipeline: preprocess → features → train → evaluate
-python -m src.models.train
-python -m src.models.evaluate
+# Build the images and start all containers in detached mode
+docker-compose up -d --build
 ```
 
-### 3. Start API
+*Note: The first launch will take a few minutes as Docker downloads the necessary images, initializes the PostgreSQL database, and sets up Airflow metadata.*
 
+### 4. Access the Services
+
+After the containers report as `healthy`, you can access the following services in your web browser:
+
+- **Main Application (Web Dashboard & API)**: http://localhost:8000
+- **Airflow UI (Workflow Management)**: http://localhost:8080
+  - Default login: Username: `airflow` / Password: `airflow`
+- **MLflow Tracking Server**: http://localhost:5001
+- **pgAdmin (Database Management)**: http://localhost:8082
+  - Default login: Email: `admin@admin.com` / Password: `admin`
+
+### 5. Useful Docker Commands
+
+To view the real-time logs of the serving API (useful for seeing predictions and SHAP outputs):
 ```bash
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+docker logs model-serving -f
 ```
 
-### 4. Make a Prediction
-
+To stop all services gracefully:
 ```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "age": 62,
-    "gender": 1,
-    "education_years": 16,
-    "income_level": 3,
-    "smoker": 1,
-    "smoking_years": 25.0,
-    "cigarettes_per_day": 20.0,
-    "pack_years": 25.0,
-    "passive_smoking": 0,
-    "air_pollution_index": 45.0,
-    "occupational_exposure": 1,
-    "radon_exposure": 0,
-    "family_history_cancer": 1,
-    "copd": 0,
-    "asthma": 0,
-    "previous_tb": 0,
-    "chronic_cough": 1,
-    "chest_pain": 1,
-    "shortness_of_breath": 0,
-    "fatigue": 1,
-    "bmi": 26.5,
-    "oxygen_saturation": 98.0,
-    "fev1_x10": 38.0,
-    "crp_level": 1.5,
-    "xray_abnormal": 0,
-    "exercise_hours_per_week": 3.0,
-    "diet_quality": 4,
-    "alcohol_units_per_week": 5.0,
-    "healthcare_access": 4
-  }'
+docker-compose down
 ```
 
-Response:
-```json
-{
-  "lung_cancer_risk": 1,
-  "probability": 0.9234,
-  "risk_level": "High"
-}
+To completely reset the environment (WARNING: this removes the database and all tracked models):
+```bash
+docker-compose down -v
 ```
 
 ---
 
-## 🔄 Pipeline Stages
+## 🔄 Pipeline Stages & Retraining Workflow
 
-| Stage | Module | Description |
-|-------|--------|-------------|
-| 1. Ingest | `src/data/ingest.py` | Load CSV/API data, validate schema |
-| 2. Preprocess | `src/data/preprocess.py` | Handle missing values, encode, scale, cap outliers |
-| 3. Features | `src/features/build_features.py` | Create derived features (smoking risk, health score, etc.) |
-| 4. Train | `src/models/train.py` | Train 3 models, hyperparameter tuning, select best |
-| 5. Evaluate | `src/models/evaluate.py` | Metrics, plots, threshold optimization |
-| 6. Explain | `src/models/explain.py` | SHAP global & local explanations |
-| 7. Predict | `src/models/predict.py` | Load model, preprocess input, return prediction |
+The system is designed to continuously learn from new data.
+
+### How to trigger a retrain:
+1. **Ingest Data**: Go to the **Data Ingestion** tab in the Web Dashboard (http://localhost:8000). Enter patient data manually (ensure you select the actual diagnosis label) or upload a CSV file containing the `lung_cancer_risk` column.
+2. **Open Airflow**: Navigate to the Airflow UI (http://localhost:8080).
+3. **Trigger Pipeline**: Manually trigger the `ingest_new_data_to_db` DAG. 
+4. **Cascade Execution**: This will automatically trigger the subsequent pipelines:
+   `ingest_new_data_to_db` → `preprocess_data` → `build_features` → `train_models` → `evaluate_and_promote`
+5. **Deployment**: Once complete, MLflow promotes the model with the highest **Recall** score. The Serving API automatically begins using this new model for future predictions.
 
 ---
 
-## 📊 API Endpoints
+## 📊 API Usage
+
+If you prefer to interact with the system programmatically, you can use the REST API.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `GET` | `/health` | Detailed health status |
-| `POST` | `/predict` | Predict lung cancer risk |
-| `POST` | `/update-data` | Submit new data for retraining |
-| `POST` | `/reload-model` | Reload model from disk |
-| `GET` | `/docs` | Swagger UI documentation |
+| `GET` | `/` | Serves the Web UI |
+| `GET` | `/health` | Detailed health status of the API and Model |
+| `POST` | `/predict` | Submit a JSON payload of 29 features to get a prediction and SHAP explanation |
+| `POST` | `/ingest-data` | Submit an array of records (with labels) to be saved for retraining |
+| `POST` | `/upload-csv` | Upload a batch CSV file for retraining |
 
 ---
 
 ## 📈 Model Performance
 
-Models are evaluated using:
-- **Recall** (priority — minimize false negatives)
-- Precision
-- F1-Score
-- ROC-AUC
+Models are evaluated using multiple metrics, but **Recall is prioritized** to minimize false negatives (missed cancer diagnoses).
 
-The best model is selected by **recall** to minimize missed diagnoses.
-
-Evaluation outputs include:
+Evaluation outputs (viewable in the MLflow UI) include:
 - Confusion matrix heatmap
 - ROC curve
 - Precision-Recall curve
@@ -215,49 +190,7 @@ Evaluation outputs include:
 
 ---
 
-## ⚙️ Airflow Orchestration
-
-The retraining DAG (`lung_cancer_retrain`) runs weekly:
-
-```
-ingest_data → preprocess_data → build_features → train_model → evaluate_model → save_model
-```
-
-Configuration:
-- Schedule: `@weekly`
-- Retries: 3
-- Retry delay: 5 minutes
-- Email on failure: configurable
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test module
-pytest tests/test_ingest.py -v
-pytest tests/test_preprocess.py -v
-pytest tests/test_predict.py -v
-```
-
----
-
-## 🐳 Docker Deployment
-
-```bash
-# Build image
-docker build -t lung-cancer-prediction .
-
-# Run container
-docker run -p 8000:8000 lung-cancer-prediction
-```
-
----
-
-## 📝 Dataset
+## 📝 Dataset Details
 
 Based on the [Kaggle Lung Cancer Prediction Dataset](https://www.kaggle.com/datasets/dhrubangtalukdar/lung-cancer-prediction-dataset) with 30 features:
 
