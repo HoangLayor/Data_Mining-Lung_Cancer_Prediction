@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lung Cancer Risk Assessment Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-panel">
+            <div class="logo">
+                <i class="fas fa-lungs-virus highlight-icon"></i>
+                <h1>OncoPredict AI</h1>
+            </div>
+            <nav class="nav-tabs">
+                <button class="nav-item active" data-view="prediction">
+                    <i class="fas fa-stethoscope"></i> Prediction
+                </button>
+                <button class="nav-item" data-view="ingestion">
+                    <i class="fas fa-database"></i> Data Ingestion
+                </button>
+            </nav>
+            <div class="header-status">
+                <span class="status-indicator online"></span>
+                <span>System Online</span>
+            </div>
+        </header>
+
+        <main class="dashboard-layout" id="view-prediction">
+            <!-- Left Column: Input Form -->
+            <section class="form-section glass-panel scrollable">
+                <div class="section-header">
+                    <h2><i class="fas fa-clipboard-user"></i> Patient Assessment</h2>
+                    <p>Enter patient demographics, lifestyle, and medical data for risk evaluation.</p>
+                </div>
+
+                <form id="prediction-form">
+                    <!-- Group 1: Demographics -->
+                    <div class="form-group-card">
+                        <h3>Demographics</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="age">Age</label>
+                                <input type="number" id="age" name="age" required min="1" max="120" placeholder="e.g. 62">
+                            </div>
+                            <div class="input-field">
+                                <label for="gender">Gender</label>
+                                <select id="gender" name="gender" required>
+                                    <option value="" disabled selected>Select</option>
+                                    <option value="1">Male</option>
+                                    <option value="0">Female</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="education_years">Education (Years)</label>
+                                <input type="number" id="education_years" name="education_years" required min="0" max="30" placeholder="e.g. 16">
+                            </div>
+                            <div class="input-field">
+                                <label for="income_level">Income Level (1-5)</label>
+                                <input type="number" id="income_level" name="income_level" required min="1" max="5" placeholder="e.g. 3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 2: Lifestyle & Environment -->
+                    <div class="form-group-card">
+                        <h3>Lifestyle & Environment</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="smoker">Smoker</label>
+                                <select id="smoker" name="smoker" required>
+                                    <option value="" disabled selected>Select</option>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="smoking_years">Smoking Years</label>
+                                <input type="number" id="smoking_years" name="smoking_years" required step="0.1" min="0" placeholder="e.g. 25.0">
+                            </div>
+                            <div class="input-field">
+                                <label for="cigarettes_per_day">Cigarettes / Day</label>
+                                <input type="number" id="cigarettes_per_day" name="cigarettes_per_day" required step="0.1" min="0" placeholder="e.g. 20">
+                            </div>
+                            <div class="input-field">
+                                <label for="pack_years">Pack Years</label>
+                                <input type="number" id="pack_years" name="pack_years" required step="0.1" min="0" placeholder="e.g. 25.0">
+                            </div>
+                            <div class="input-field">
+                                <label for="passive_smoking">Passive Smoking</label>
+                                <select id="passive_smoking" name="passive_smoking" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="air_pollution_index">Air Pollution Index (0-100)</label>
+                                <input type="number" id="air_pollution_index" name="air_pollution_index" required step="0.1" min="0" max="100" placeholder="e.g. 45">
+                            </div>
+                            <div class="input-field">
+                                <label for="occupational_exposure">Occupational Exposure</label>
+                                <select id="occupational_exposure" name="occupational_exposure" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="radon_exposure">Radon Exposure</label>
+                                <select id="radon_exposure" name="radon_exposure" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="bmi">BMI</label>
+                                <input type="number" id="bmi" name="bmi" required step="0.1" min="10" max="60" placeholder="e.g. 26.5">
+                            </div>
+                            <div class="input-field">
+                                <label for="exercise_hours_per_week">Exercise (hrs/week)</label>
+                                <input type="number" id="exercise_hours_per_week" name="exercise_hours_per_week" required step="0.1" min="0" placeholder="e.g. 3.0">
+                            </div>
+                            <div class="input-field">
+                                <label for="diet_quality">Diet Quality (1-5)</label>
+                                <input type="number" id="diet_quality" name="diet_quality" required min="1" max="5" placeholder="e.g. 4">
+                            </div>
+                            <div class="input-field">
+                                <label for="alcohol_units_per_week">Alcohol Units / Week</label>
+                                <input type="number" id="alcohol_units_per_week" name="alcohol_units_per_week" required step="0.1" min="0" placeholder="e.g. 5.0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 3: Medical History & Symptoms -->
+                    <div class="form-group-card">
+                        <h3>Medical History & Symptoms</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="family_history_cancer">Family History Cancer</label>
+                                <select id="family_history_cancer" name="family_history_cancer" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="copd">COPD</label>
+                                <select id="copd" name="copd" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="asthma">Asthma</label>
+                                <select id="asthma" name="asthma" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="previous_tb">Previous TB</label>
+                                <select id="previous_tb" name="previous_tb" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="chronic_cough">Chronic Cough</label>
+                                <select id="chronic_cough" name="chronic_cough" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="chest_pain">Chest Pain</label>
+                                <select id="chest_pain" name="chest_pain" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="shortness_of_breath">Shortness of Breath</label>
+                                <select id="shortness_of_breath" name="shortness_of_breath" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="fatigue">Fatigue</label>
+                                <select id="fatigue" name="fatigue" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 4: Clinical Results -->
+                    <div class="form-group-card">
+                        <h3>Clinical Results</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="oxygen_saturation">Oxygen Saturation (%)</label>
+                                <input type="number" id="oxygen_saturation" name="oxygen_saturation" required step="0.1" min="70" max="100" placeholder="e.g. 98.0">
+                            </div>
+                            <div class="input-field">
+                                <label for="fev1_x10">FEV1</label>
+                                <input type="number" id="fev1_x10" name="fev1_x10" required step="0.1" placeholder="e.g. 38.0">
+                            </div>
+                            <div class="input-field">
+                                <label for="crp_level">CRP Level</label>
+                                <input type="number" id="crp_level" name="crp_level" required step="0.1" placeholder="e.g. 1.5">
+                            </div>
+                            <div class="input-field">
+                                <label for="xray_abnormal">X-Ray Abnormal</label>
+                                <select id="xray_abnormal" name="xray_abnormal" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="healthcare_access">Healthcare Access (1-5)</label>
+                                <input type="number" id="healthcare_access" name="healthcare_access" required min="1" max="5" placeholder="e.g. 4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary" id="btn-fill-dummy">Fill Dummy Data</button>
+                        <button type="submit" class="btn primary" id="btn-predict">
+                            <i class="fas fa-bolt"></i> Run Assessment
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Right Column: Results & Tools -->
+            <section class="results-section">
+                <!-- Result Card -->
+                <div class="glass-panel result-card" id="result-card">
+                    <h2><i class="fas fa-chart-pie"></i> Risk Evaluation</h2>
+                    
+                    <div class="result-placeholder" id="result-placeholder">
+                        <i class="fas fa-stethoscope fa-3x"></i>
+                        <p>Submit patient data to see prediction</p>
+                    </div>
+
+                    <div class="result-content hidden" id="result-content">
+                        <div class="risk-gauge">
+                            <svg viewBox="0 0 36 36" class="circular-chart">
+                                <path class="circle-bg"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                                <path class="circle" id="risk-circle"
+                                    stroke-dasharray="0, 100"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                                <text x="18" y="20.35" class="percentage" id="risk-percentage">0%</text>
+                            </svg>
+                        </div>
+                        <div class="prediction-text">
+                            <h3 id="prediction-label">Low Risk</h3>
+                            <p id="prediction-desc">The model indicates a low probability of lung cancer based on the provided metrics.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading Overlay -->
+                    <div class="loader-overlay hidden" id="predict-loader">
+                        <div class="spinner"></div>
+                        <p>Analyzing...</p>
+                    </div>
+                </div>
+
+                <!-- Explanation Card (SHAP) -->
+                <div class="glass-panel explanation-card">
+                    <h2><i class="fas fa-brain"></i> AI Explanation</h2>
+                    <div id="explanation-placeholder" class="placeholder-text">
+                        Run prediction to see SHAP feature importance.
+                    </div>
+                    <div id="explanation-content" class="hidden">
+                        <p class="small-text">Key factors influencing this specific prediction:</p>
+                        <img id="shap-image" src="" alt="SHAP Waterfall Plot" class="shap-plot responsive-img">
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- View 2: Data Ingestion -->
+        <main class="dashboard-layout hidden" id="view-ingestion">
+            <!-- Left Column: Manual Entry -->
+            <section class="form-section glass-panel scrollable">
+                <div class="section-header">
+                    <h2><i class="fas fa-user-plus"></i> Manual Data Entry</h2>
+                    <p>Add individual patient records directly to the training queue.</p>
+                </div>
+
+                <form id="ingest-form">
+                    <div class="form-group-card">
+                        <h3>Demographics</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="ingest-age">Age</label>
+                                <input type="number" id="ingest-age" name="age" required min="1" max="120">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-gender">Gender</label>
+                                <select id="ingest-gender" name="gender" required>
+                                    <option value="1">Male</option>
+                                    <option value="0">Female</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-education_years">Education (Years)</label>
+                                <input type="number" id="ingest-education_years" name="education_years" required min="0" max="30">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-income_level">Income Level (1-5)</label>
+                                <input type="number" id="ingest-income_level" name="income_level" required min="1" max="5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-card">
+                        <h3>Lifestyle & Environment</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="ingest-smoker">Smoker</label>
+                                <select id="ingest-smoker" name="smoker" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-smoking_years">Smoking Years</label>
+                                <input type="number" id="ingest-smoking_years" name="smoking_years" required step="0.1" min="0">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-cigarettes_per_day">Cigarettes / Day</label>
+                                <input type="number" id="ingest-cigarettes_per_day" name="cigarettes_per_day" required step="0.1" min="0">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-pack_years">Pack Years</label>
+                                <input type="number" id="ingest-pack_years" name="pack_years" required step="0.1" min="0">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-passive_smoking">Passive Smoking</label>
+                                <select id="ingest-passive_smoking" name="passive_smoking" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-air_pollution_index">Air Pollution Index</label>
+                                <input type="number" id="ingest-air_pollution_index" name="air_pollution_index" required step="0.1" min="0" max="100">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-occupational_exposure">Occupational Exposure</label>
+                                <select id="ingest-occupational_exposure" name="occupational_exposure" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-radon_exposure">Radon Exposure</label>
+                                <select id="ingest-radon_exposure" name="radon_exposure" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-bmi">BMI</label>
+                                <input type="number" id="ingest-bmi" name="bmi" required step="0.1" min="10" max="60">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-exercise_hours_per_week">Exercise (hrs/week)</label>
+                                <input type="number" id="ingest-exercise_hours_per_week" name="exercise_hours_per_week" required step="0.1" min="0">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-diet_quality">Diet Quality (1-5)</label>
+                                <input type="number" id="ingest-diet_quality" name="diet_quality" required min="1" max="5">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-alcohol_units_per_week">Alcohol Units / Week</label>
+                                <input type="number" id="ingest-alcohol_units_per_week" name="alcohol_units_per_week" required step="0.1" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-card">
+                        <h3>Medical History & Symptoms</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="ingest-family_history_cancer">Family History Cancer</label>
+                                <select id="ingest-family_history_cancer" name="family_history_cancer" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-copd">COPD</label>
+                                <select id="ingest-copd" name="copd" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-asthma">Asthma</label>
+                                <select id="ingest-asthma" name="asthma" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-previous_tb">Previous TB</label>
+                                <select id="ingest-previous_tb" name="previous_tb" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-chronic_cough">Chronic Cough</label>
+                                <select id="ingest-chronic_cough" name="chronic_cough" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-chest_pain">Chest Pain</label>
+                                <select id="ingest-chest_pain" name="chest_pain" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-shortness_of_breath">Shortness of Breath</label>
+                                <select id="ingest-shortness_of_breath" name="shortness_of_breath" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-fatigue">Fatigue</label>
+                                <select id="ingest-fatigue" name="fatigue" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group-card">
+                        <h3>Clinical Results</h3>
+                        <div class="input-grid">
+                            <div class="input-field">
+                                <label for="ingest-oxygen_saturation">Oxygen Saturation (%)</label>
+                                <input type="number" id="ingest-oxygen_saturation" name="oxygen_saturation" required step="0.1" min="70" max="100">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-fev1_x10">FEV1</label>
+                                <input type="number" id="ingest-fev1_x10" name="fev1_x10" required step="0.1">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-crp_level">CRP Level</label>
+                                <input type="number" id="ingest-crp_level" name="crp_level" required step="0.1">
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-xray_abnormal">X-Ray Abnormal</label>
+                                <select id="ingest-xray_abnormal" name="xray_abnormal" required>
+                                    <option value="1">Yes</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="ingest-healthcare_access">Healthcare Access (1-5)</label>
+                                <input type="number" id="ingest-healthcare_access" name="healthcare_access" required min="1" max="5">
+                            </div>
+                            <div class="input-field highlight-field">
+                                <label for="ingest-lung_cancer_risk"><b>Diagnosis / Label (Required)</b></label>
+                                <select id="ingest-lung_cancer_risk" name="lung_cancer_risk" required>
+                                    <option value="" disabled selected>Select Result</option>
+                                    <option value="1">Positive (Cancer Found)</option>
+                                    <option value="0">Negative (Healthy)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary" id="btn-fill-dummy-ingest">Fill Dummy Data</button>
+                        <button type="submit" class="btn primary" id="btn-ingest-manual">
+                            <i class="fas fa-plus"></i> Add Record
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Right Column: CSV Upload -->
+            <section class="results-section">
+                <div class="glass-panel ingestion-card">
+                    <h2><i class="fas fa-file-csv"></i> Batch CSV Upload</h2>
+                    <p>Upload a CSV file containing multiple patient records. The system will append these to the ingestion queue.</p>
+                    
+                    <form id="upload-form-ingest" class="upload-zone">
+                        <input type="file" id="csv-file-ingest" accept=".csv" required hidden>
+                        <label for="csv-file-ingest" class="upload-label" id="upload-label-ingest">
+                            <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                            <span>Click or drag CSV here</span>
+                        </label>
+                        <button type="submit" class="btn outline">Upload Batch</button>
+                    </form>
+                    <div id="upload-status-ingest" class="status-msg"></div>
+                </div>
+
+                <div class="glass-panel info-card">
+                    <h2><i class="fas fa-info-circle"></i> Instructions</h2>
+                    <p>Data added here will be saved to the <code>new_data.csv</code> file. This data will be incorporated into the next model training cycle automatically via Airflow.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
