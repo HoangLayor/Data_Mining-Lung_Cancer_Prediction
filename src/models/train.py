@@ -28,6 +28,7 @@ from sklearn.metrics import (
     roc_auc_score,
     make_scorer,
 )
+import optuna
 from xgboost import XGBClassifier
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline as ImbPipeline
@@ -40,10 +41,10 @@ from src.utils.config import (
     METRICS_FILE,
     BEST_MODEL_FILE,
     MODEL_METADATA_FILE,
-    LOGISTIC_REGRESSION_PARAMS,
-    RANDOM_FOREST_PARAMS,
-    XGBOOST_PARAMS,
+    DATABASE_URL,
 )
+from src.utils.database import get_db
+from src.utils.models import ModelMetadata
 
 logger = get_logger(__name__)
 
@@ -68,13 +69,72 @@ def _get_models() -> Dict[str, Any]:
     }
 
 
-def _get_param_grids() -> Dict[str, Dict]:
-    """Return hyperparameter grids for each model."""
-    return {
-        "LogisticRegression": LOGISTIC_REGRESSION_PARAMS,
-        "RandomForest": RANDOM_FOREST_PARAMS,
-        "XGBoost": XGBOOST_PARAMS,
-    }
+def _get_objective(model_name: str, X: pd.DataFrame, y: pd.Series, use_smote: bool = True):
+    """
+    Create an objective function for Optuna.
+    
+    Args:
+        model_name: Name of the model.
+        X: Feature matrix.
+        y: Target vector.
+        use_smote: Whether to apply SMOTE within CV.
+        
+    Returns:
+        Objective function for Optuna.
+    """
+    def objective(trial):
+        if model_name == "LogisticRegression":
+            params = {
+                "C": trial.suggest_float("C", 0.001, 100.0, log=True),
+                "penalty": "l2",
+                "solver": "lbfgs",
+                "max_iter": 1000,
+                "class_weight": "balanced",
+            }
+            model = LogisticRegression(**params, random_state=RANDOM_SEED)
+        
+        elif model_name == "RandomForest":
+            params = {
+                "n_estimators": trial.suggest_int("n_estimators", 50, 400),
+                "max_depth": trial.suggest_int("max_depth", 3, 20),
+                "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+                "class_weight": "balanced",
+            }
+            model = RandomForestClassifier(**params, random_state=RANDOM_SEED)
+        
+        elif model_name == "XGBoost":
+            params = {
+                "n_estimators": trial.suggest_int("n_estimators", 50, 400),
+                "max_depth": trial.suggest_int("max_depth", 3, 15),
+                "learning_rate": trial.suggest_float("learning_rate", 0.001, 0.3, log=True),
+                "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                "gamma": trial.suggest_float("gamma", 0, 5),
+                "eval_metric": "logloss",
+            }
+            model = XGBClassifier(**params, random_state=RANDOM_SEED)
+        
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
+
+        # Use pipeline if SMOTE is requested
+        if use_smote:
+            pipeline = ImbPipeline([
+                ("smote", SMOTE(random_state=RANDOM_SEED)),
+                ("model", model)
+            ])
+            eval_obj = pipeline
+        else:
+            eval_obj = model
+
+        # Cross-validation
+        skf = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_SEED)
+        # We optimize for recall
+        scores = cross_val_score(eval_obj, X, y, cv=skf, scoring="recall", n_jobs=-1)
+        return scores.mean()
+
+    return objective
 
 
 def cross_validate_model(
@@ -82,6 +142,7 @@ def cross_validate_model(
     X: pd.DataFrame,
     y: pd.Series,
     cv_folds: int = CV_FOLDS,
+    use_smote: bool = True,
 ) -> Dict[str, float]:
     """
     Perform Stratified K-Fold Cross Validation.
@@ -91,11 +152,22 @@ def cross_validate_model(
         X: Feature matrix.
         y: Target vector.
         cv_folds: Number of folds.
+        use_smote: Whether to apply SMOTE within each fold.
 
     Returns:
         Dictionary with mean metrics across folds.
     """
     skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=RANDOM_SEED)
+
+    # Use pipeline if SMOTE is requested to avoid data leakage
+    if use_smote:
+        pipeline = ImbPipeline([
+            ("smote", SMOTE(random_state=RANDOM_SEED)),
+            ("model", model)
+        ])
+        eval_obj = pipeline
+    else:
+        eval_obj = model
 
     scorers = {
         "recall": make_scorer(recall_score),
@@ -106,7 +178,8 @@ def cross_validate_model(
 
     results = {}
     for metric_name, scorer in scorers.items():
-        scores = cross_val_score(model, X, y, cv=skf, scoring=scorer)
+        # Note: cross_val_score will use the pipeline (SMOTE) only on the training folds
+        scores = cross_val_score(eval_obj, X, y, cv=skf, scoring=scorer, n_jobs=-1)
         results[metric_name] = {
             "mean": float(np.mean(scores)),
             "std": float(np.std(scores)),
@@ -164,56 +237,68 @@ def train_model(
     logger.info("=" * 60)
     logger.info("Starting model training pipeline...")
     logger.info(f"Training data shape: X={X_train.shape}, y={y_train.shape}")
-
-    # Apply SMOTE if requested
-    if use_smote:
-        X_train_balanced, y_train_balanced = _apply_smote(X_train, y_train)
-    else:
-        X_train_balanced, y_train_balanced = X_train, y_train
+    logger.info(f"Class distribution: {y_train.value_counts().to_dict()}")
 
     models = _get_models()
-    param_grids = _get_param_grids()
-    skf = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_SEED)
-
+    
     all_results = {}
     best_model = None
     best_recall = 0.0
     best_model_name = ""
 
+    # Set optuna logging level
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
     for name, model in models.items():
         logger.info("-" * 40)
-        logger.info(f"Training: {name}")
+        logger.info(f"Optimizing: {name} (using Optuna)")
         start_time = time.time()
 
         try:
-            # Hyperparameter tuning with RandomizedSearchCV
-            search = RandomizedSearchCV(
-                estimator=model,
-                param_distributions=param_grids[name],
-                n_iter=min(n_iter, _count_combinations(param_grids[name])),
-                scoring="recall",
-                cv=skf,
-                random_state=RANDOM_SEED,
-                n_jobs=-1,
-                verbose=0,
-            )
-            search.fit(X_train_balanced, y_train_balanced)
+            # Create study
+            study = optuna.create_study(direction="maximize")
+            objective_func = _get_objective(name, X_train, y_train, use_smote=use_smote)
+            
+            # Run optimization
+            study.optimize(objective_func, n_trials=n_iter)
+            
+            # Get best parameters
+            best_params = study.best_params
+            
+            # Re-train best model
+            if name == "LogisticRegression":
+                best_params.update({"penalty": "l2", "solver": "lbfgs", "max_iter": 1000, "class_weight": "balanced"})
+                tuned_model = LogisticRegression(**best_params, random_state=RANDOM_SEED)
+            elif name == "RandomForest":
+                best_params.update({"class_weight": "balanced"})
+                tuned_model = RandomForestClassifier(**best_params, random_state=RANDOM_SEED)
+            elif name == "XGBoost":
+                best_params.update({"eval_metric": "logloss"})
+                tuned_model = XGBClassifier(**best_params, random_state=RANDOM_SEED)
+            
+            # Re-train best model on full training set (with SMOTE if requested)
+            if use_smote:
+                smote = SMOTE(random_state=RANDOM_SEED)
+                X_train_final, y_train_final = smote.fit_resample(X_train, y_train)
+            else:
+                X_train_final, y_train_final = X_train, y_train
 
-            # Get best model and cross-validate
-            tuned_model = search.best_estimator_
-            cv_results = cross_validate_model(tuned_model, X_train_balanced, y_train_balanced)
+            tuned_model.fit(X_train_final, y_train_final)
+            
+            # Evaluate best model with full CV using pipeline to avoid leakage
+            cv_results = cross_validate_model(tuned_model, X_train, y_train, use_smote=use_smote)
 
             elapsed = time.time() - start_time
 
             result = {
-                "best_params": search.best_params_,
+                "best_params": best_params,
                 "cv_results": cv_results,
                 "training_time_seconds": round(elapsed, 2),
             }
             all_results[name] = result
 
             recall_mean = cv_results["recall"]["mean"]
-            logger.info(f"  Best params: {search.best_params_}")
+            logger.info(f"  Best params: {best_params}")
             logger.info(f"  Recall:    {recall_mean:.4f} ± {cv_results['recall']['std']:.4f}")
             logger.info(f"  Precision: {cv_results['precision']['mean']:.4f}")
             logger.info(f"  F1:        {cv_results['f1']['mean']:.4f}")
@@ -227,7 +312,9 @@ def train_model(
                 best_model_name = name
 
         except Exception as e:
-            logger.error(f"Error training {name}: {e}")
+            logger.error(f"Error optimizing {name}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             all_results[name] = {"error": str(e)}
 
     logger.info("=" * 60)
@@ -236,17 +323,11 @@ def train_model(
     # Save results
     all_results["best_model"] = best_model_name
     all_results["best_recall"] = best_recall
+    all_results["feature_names"] = list(X_train.columns)
 
     return best_model, all_results
 
 
-def _count_combinations(param_grid: Dict) -> int:
-    """Count total hyperparameter combinations."""
-    count = 1
-    for values in param_grid.values():
-        if isinstance(values, list):
-            count *= len(values)
-    return count
 
 
 def save_model(
@@ -289,28 +370,52 @@ def save_model(
         json.dump(metrics_output, f, indent=2, default=str)
     logger.info(f"Metrics saved to: {METRICS_FILE}")
 
-    # Save metadata
+    # Save metadata to JSON (as backup)
     metadata = {
         "version": version,
         "date": datetime.now().isoformat(),
         "model_type": type(model).__name__,
         "dataset_size": dataset_size,
+        "feature_names": list(metrics.get("feature_names", [])),
         "metrics": {
             k: v for k, v in metrics.items()
-            if k not in ["best_model", "best_recall"]
+            if k not in ["best_model", "best_recall", "feature_names"]
         },
     }
 
-    # Load existing metadata or create new
-    all_metadata = []
-    if MODEL_METADATA_FILE.exists():
-        with open(MODEL_METADATA_FILE, "r") as f:
-            all_metadata = json.load(f)
+    # Save to database
+    try:
+        from src.utils.models import ModelMetadata
+        with get_db() as db:
+            # Check if version exists to update or insert
+            db_meta = ModelMetadata(
+                version=version,
+                model_type=type(model).__name__,
+                dataset_size=dataset_size,
+                feature_names=metadata["feature_names"],
+                metrics=metadata["metrics"],
+                parameters=metrics.get(metrics.get("best_model", ""), {}).get("best_params", {}),
+                file_path=str(model_path)
+            )
+            db.merge(db_meta)
+            db.commit()
+            logger.info(f"Model metadata saved to database (version {version}) [OK]")
+    except Exception as e:
+        logger.error(f"Failed to save metadata to database: {e}")
 
-    all_metadata.append(metadata)
-    with open(MODEL_METADATA_FILE, "w") as f:
-        json.dump(all_metadata, f, indent=2, default=str)
-    logger.info(f"Model metadata saved to: {MODEL_METADATA_FILE}")
+    # Legacy JSON support
+    try:
+        all_metadata = []
+        if MODEL_METADATA_FILE.exists():
+            with open(MODEL_METADATA_FILE, "r") as f:
+                all_metadata = json.load(f)
+        
+        all_metadata.append(metadata)
+        with open(MODEL_METADATA_FILE, "w") as f:
+            json.dump(all_metadata, f, indent=2)
+        logger.info(f"Model metadata saved to: {MODEL_METADATA_FILE}")
+    except Exception as e:
+        logger.error(f"Failed to save JSON metadata: {e}")
 
     return model_path
 

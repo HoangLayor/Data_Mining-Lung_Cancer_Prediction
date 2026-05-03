@@ -29,35 +29,44 @@ for d in [RAW_DATA_DIR, PROCESSED_DATA_DIR, MODELS_DIR, PLOTS_DIR, LOGS_DIR]:
 # ──────────────────────────────────────────────
 # Data Configuration
 # ──────────────────────────────────────────────
-RAW_DATA_FILE = RAW_DATA_DIR / "survey_lung_cancer.csv"
+RAW_DATA_FILE = RAW_DATA_DIR / "lung_cancer.csv"
 PROCESSED_DATA_FILE = PROCESSED_DATA_DIR / "processed_data.csv"
 NEW_DATA_FILE = RAW_DATA_DIR / "new_data.csv"
 
-# Required columns in the raw dataset
+# Required columns in the raw dataset (30 total)
 REQUIRED_COLUMNS = [
-    "GENDER", "AGE", "SMOKING", "YELLOW_FINGERS", "ANXIETY",
-    "PEER_PRESSURE", "CHRONIC_DISEASE", "FATIGUE", "ALLERGY",
-    "WHEEZING", "ALCOHOL_CONSUMING", "COUGHING",
-    "SHORTNESS_OF_BREATH", "SWALLOWING_DIFFICULTY", "CHEST_PAIN",
-    "LUNG_CANCER",
+    "age", "gender", "education_years", "income_level", "smoker",
+    "smoking_years", "cigarettes_per_day", "pack_years", "passive_smoking",
+    "air_pollution_index", "occupational_exposure", "radon_exposure",
+    "family_history_cancer", "copd", "asthma", "previous_tb",
+    "chronic_cough", "chest_pain", "shortness_of_breath", "fatigue",
+    "bmi", "oxygen_saturation", "fev1_x10", "crp_level", "xray_abnormal",
+    "exercise_hours_per_week", "diet_quality", "alcohol_units_per_week",
+    "healthcare_access", "lung_cancer_risk"
 ]
 
 # Target column
-TARGET_COLUMN = "LUNG_CANCER"
+TARGET_COLUMN = "lung_cancer_risk"
 
-# Binary feature columns (encoded as 1=No, 2=Yes in raw data)
+# Binary feature columns (0=No, 1=Yes)
 BINARY_COLUMNS = [
-    "SMOKING", "YELLOW_FINGERS", "ANXIETY", "PEER_PRESSURE",
-    "CHRONIC_DISEASE", "FATIGUE", "ALLERGY", "WHEEZING",
-    "ALCOHOL_CONSUMING", "COUGHING", "SHORTNESS_OF_BREATH",
-    "SWALLOWING_DIFFICULTY", "CHEST_PAIN",
+    "gender", "smoker", "passive_smoking", "occupational_exposure",
+    "radon_exposure", "family_history_cancer", "copd", "asthma",
+    "previous_tb", "chronic_cough", "chest_pain", "shortness_of_breath",
+    "fatigue", "xray_abnormal"
 ]
 
 # Numerical columns for scaling
-NUMERICAL_COLUMNS = ["AGE"]
+NUMERICAL_COLUMNS = [
+    "age", "education_years", "income_level", "smoking_years",
+    "cigarettes_per_day", "pack_years", "air_pollution_index",
+    "bmi", "oxygen_saturation", "fev1_x10", "crp_level",
+    "exercise_hours_per_week", "diet_quality", "alcohol_units_per_week",
+    "healthcare_access"
+]
 
-# Categorical columns for encoding
-CATEGORICAL_COLUMNS = ["GENDER"]
+# Categorical columns
+CATEGORICAL_COLUMNS = []
 
 # ──────────────────────────────────────────────
 # Model Configuration
@@ -74,31 +83,10 @@ EVALUATION_REPORT_FILE = MODELS_DIR / "evaluation_report.json"
 MODEL_METADATA_FILE = MODELS_DIR / "model_metadata.json"
 
 # ──────────────────────────────────────────────
-# Hyperparameter Grids
+# Hyperparameter Optimization (Optuna)
 # ──────────────────────────────────────────────
-LOGISTIC_REGRESSION_PARAMS = {
-    "C": [0.01, 0.1, 1, 10, 100],
-    "penalty": ["l2"],
-    "solver": ["lbfgs"],
-    "max_iter": [1000],
-    "class_weight": ["balanced"],
-}
-
-RANDOM_FOREST_PARAMS = {
-    "n_estimators": [100, 200, 300],
-    "max_depth": [5, 10, 15, None],
-    "min_samples_split": [2, 5, 10],
-    "min_samples_leaf": [1, 2, 4],
-    "class_weight": ["balanced"],
-}
-
-XGBOOST_PARAMS = {
-    "n_estimators": [100, 200, 300],
-    "max_depth": [3, 5, 7],
-    "learning_rate": [0.01, 0.1, 0.3],
-    "subsample": [0.7, 0.8, 1.0],
-    "colsample_bytree": [0.7, 0.8, 1.0],
-}
+# We now use Optuna for hyperparameter optimization defined in src/models/train.py.
+# The previous fixed grids have been removed for flexibility.
 
 # ──────────────────────────────────────────────
 # Logging Configuration
@@ -108,7 +96,21 @@ LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # ──────────────────────────────────────────────
-# API Configuration
+# API & Database Configuration
 # ──────────────────────────────────────────────
 API_HOST = "0.0.0.0"
 API_PORT = 8000
+
+# PostgreSQL Configuration
+# Priority: DATABASE_URL env var > Individual POSTGRES_* env vars > Defaults
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "123456")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5433")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "lung_cancer_db")
+
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+)
+

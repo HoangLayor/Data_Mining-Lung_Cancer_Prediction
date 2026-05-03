@@ -24,7 +24,8 @@ env/
 Thumbs.db
 
 # Logs
-logs/*.log
+logs/
+*.log
 
 # Data (keep directory structure)
 data/raw/*.csv
