@@ -1,0 +1,8 @@
+mlflow==2.3.2
+numpy
+pandas
+scikit-learn
+imbalanced-learn
+optuna
+psycopg2-binary
+SQLAlchemy
