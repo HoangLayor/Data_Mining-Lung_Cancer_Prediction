@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import shap
 from pathlib import Path
 from typing import Optional
+import io
+import base64
 
 from src.utils.logger import get_logger
 from src.utils.config import PLOTS_DIR
@@ -210,6 +212,151 @@ def explain_local(
         logger.info("  [OK] SHAP local bar plot saved (fallback)")
 
     logger.info(f"Local SHAP plots saved to: {output_dir}")
+
+def get_local_explanation_dict(
+    model,
+    sample: pd.DataFrame,
+    X_background: Optional[pd.DataFrame] = None,
+) -> dict:
+    """
+    Generate local SHAP explanation and return as a dictionary.
+    """
+    # Get model prediction for reference
+    if hasattr(model, "predict_proba"):
+        prob = model.predict_proba(sample)
+        logger.info(f"Model predict_proba: {prob}")
+    
+    try:
+        # Use the modern Explainer API which is more robust
+        # We use a small sample as background if needed for KernelExplainer fallback
+        background = None
+        if X_background is not None:
+            background = shap.sample(X_background, min(100, len(X_background)))
+        
+        explainer = shap.Explainer(model, background)
+        logger.info(f"Selected explainer: {type(explainer)}")
+    except Exception as e:
+        logger.warning(f"shap.Explainer failed, falling back: {e}")
+        try:
+            from sklearn.linear_model import LogisticRegression
+            if isinstance(model, LogisticRegression):
+                explainer = shap.LinearExplainer(model, X_background if X_background is not None else sample)
+            else:
+                explainer = shap.TreeExplainer(model)
+        except Exception:
+            if X_background is None:
+                X_background = sample
+            background = shap.sample(X_background, min(50, len(X_background)))
+            explainer = shap.KernelExplainer(model.predict_proba, background)
+
+    # Calculate SHAP values
+    try:
+        # shap.Explainer might return an Explanation object
+        result = explainer(sample)
+        if isinstance(result, shap.Explanation):
+            shap_values = result.values
+            expected_value = result.base_values
+            if isinstance(expected_value, np.ndarray) and expected_value.ndim >= 1:
+                expected_value = expected_value[0]
+        else:
+            shap_values = result
+            expected_value = getattr(explainer, "expected_value", 0)
+    except Exception as e:
+        logger.warning(f"Explainer call failed, trying shap_values(): {e}")
+        shap_values = explainer.shap_values(sample)
+        expected_value = getattr(explainer, "expected_value", 0)
+
+    logger.info(f"SHAP values type: {type(shap_values)}")
+    if isinstance(shap_values, list):
+        logger.info(f"SHAP values list length: {len(shap_values)}")
+        # For multi-class, take class 1 (High Risk)
+        sv = shap_values[1] if len(shap_values) > 1 else shap_values[0]
+    elif isinstance(shap_values, np.ndarray):
+        logger.info(f"SHAP values ndarray shape: {shap_values.shape}")
+        if len(shap_values.shape) == 3:
+            sv = shap_values[:, :, 1] if shap_values.shape[2] > 1 else shap_values[:, :, 0]
+        else:
+            sv = shap_values
+    else:
+        sv = shap_values
+
+    sv_row = sv[0] if isinstance(sv, np.ndarray) and sv.ndim == 2 else sv
+    logger.info(f"Extracted sv_row (first 5): {sv_row[:5]}")
+    logger.info(f"Expected value: {expected_value}")
+
+    
+    features = list(sample.columns) if hasattr(sample, 'columns') else [f"Feature {i}" for i in range(len(sv_row))]
+    
+    sv_row_flat = np.array(sv_row).flatten()
+    
+    explanation = []
+    for feature, value in zip(features, sv_row_flat):
+        explanation.append({
+            "feature": feature,
+            "impact": float(value)
+        })
+        
+    # Sort by absolute impact descending
+    explanation.sort(key=lambda x: abs(x["impact"]), reverse=True)
+    
+    # Ensure expected_value is a float
+    if isinstance(expected_value, (list, np.ndarray)):
+        # For multi-class, expected_value can be an array
+        expected_value = float(expected_value[1]) if len(expected_value) > 1 else float(expected_value[0])
+    else:
+        expected_value = float(expected_value)
+
+
+    # Generate robust bar chart for top 10 features
+    try:
+        # Get top 10 features by absolute impact
+        top_10 = explanation[:10]
+        # Reverse to have the highest impact at the top of the barh plot
+        top_10.reverse()
+        
+        top_features = [x["feature"] for x in top_10]
+        top_impacts = [x["impact"] for x in top_10]
+        
+        fig, ax = plt.subplots(figsize=(9, 6))
+        colors = ["#ef4444" if v > 0 else "#3b82f6" for v in top_impacts]
+        
+        bars = ax.barh(top_features, top_impacts, color=colors, height=0.6)
+        
+        # Add values at the end of bars
+        for bar in bars:
+            width = bar.get_width()
+            label_x_pos = width + (0.01 * width if width > 0 else -0.01 * width)
+            ax.text(label_x_pos, bar.get_y() + bar.get_height()/2, 
+                    f'{width:+.3f}', va='center', 
+                    ha='left' if width > 0 else 'right',
+                    fontsize=10)
+            
+        ax.set_xlabel("SHAP Value (Impact on Prediction)", fontsize=12)
+        ax.set_title("Top 10 Feature Impacts", fontsize=14, fontweight="bold")
+        
+        # Remove spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        # Add vertical line at 0
+        ax.axvline(x=0, color='black', linewidth=0.8, linestyle='--')
+        
+        plt.tight_layout()
+        
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", dpi=120, bbox_inches="tight")
+        buf.seek(0)
+        plot_base64 = base64.b64encode(buf.read()).decode("utf-8")
+        plt.close(fig)
+    except Exception as e:
+        logger.warning(f"Could not generate plot for API: {e}")
+        plot_base64 = None
+
+    return {
+        "base_value": expected_value,
+        "features": explanation,
+        "image_base64": plot_base64
+    }
 
 
 if __name__ == "__main__":

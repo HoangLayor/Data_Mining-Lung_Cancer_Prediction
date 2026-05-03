@@ -89,6 +89,26 @@ def load_from_db() -> pd.DataFrame:
         raise
 
 
+def load_preprocessed_from_db() -> pd.DataFrame:
+    """
+    Load preprocessed dataset from the PostgreSQL 'preprocessed_patients' table.
+
+    Returns:
+        DataFrame with the loaded preprocessed data (features and target).
+    """
+    logger.info("Starting data ingestion from 'preprocessed_patients' table...")
+    
+    try:
+        with get_db() as db:
+            df = pd.read_sql("SELECT * FROM preprocessed_patients", db.bind)
+        
+        logger.info(f"Successfully loaded {len(df)} preprocessed records from database")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading preprocessed data from database: {e}")
+        raise
+
+
 def load_from_api() -> pd.DataFrame:
     """
     Mock function to simulate loading data from an external API.

@@ -102,8 +102,15 @@ API_HOST = "0.0.0.0"
 API_PORT = 8000
 
 # PostgreSQL Configuration
-# Format: postgresql+psycopg2://user:password@host:port/dbname
+# Priority: DATABASE_URL env var > Individual POSTGRES_* env vars > Defaults
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "123456")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5433")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "lung_cancer_db")
+
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+psycopg2://postgres:123456@localhost:5433/lung_cancer_db"
+    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 )
+
