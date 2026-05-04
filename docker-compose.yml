@@ -10,7 +10,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-joblib scikit-learn psycopg2-binary}
     HOST_TRAINING_DIR: ${HOST_TRAINING_DIR:-/tmp}
     MLFLOW_TRACKING_URI: http://mlflow:5000
     POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -187,6 +187,10 @@ services:
       - |
         mkdir -p /sources/logs /sources/airflow/dags /sources/airflow/plugins /sources/models
         chown -R "${AIRFLOW_UID}:0" /sources/logs /sources/airflow/dags /sources/airflow/plugins /sources/models
+        # Seed the lung_cancer_db with initial data
+        echo "Seeding lung_cancer_db..."
+        export PYTHONPATH=$PYTHONPATH:/sources
+        python3 /sources/src/data/seed_db.py
         exec /entrypoint airflow version
     environment:
       <<: *airflow-common-env
