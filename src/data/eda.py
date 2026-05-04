@@ -7,7 +7,8 @@ This module covers:
 3) Missing values per column
 4) Outlier detection for selected continuous variables
 5) Correlation analysis for numerical features
-6) Distribution comparison between low-risk and high-risk groups
+6) Per-variable distribution plots matched to variable type (continuous
+   hist+KDE, binary bars, ordinal/discrete bars)
 
 Usage:
     python -m src.data.eda
@@ -21,6 +22,7 @@ from typing import Iterable
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -32,20 +34,23 @@ logger = get_logger(__name__)
 
 EDA_REPORT_DIR = Path("reports") / "eda"
 DEFAULT_CONTINUOUS_COLS = ["age", "oxygen_saturation", "fev1_x10", "crp_level"]
-DEFAULT_KEY_FEATURES = [
-    "pack_years",
-    "smoking_years",
-    "cigarettes_per_day",
-    "copd",
-    "chronic_cough",
-    "shortness_of_breath",
-    "xray_abnormal",
-    "oxygen_saturation",
-    "fev1_x10",
-    "crp_level",
-    "education_years",
-    "income_level",
-    "healthcare_access",
+
+HIST_BINS_DEFAULT = 30
+
+# Feature groups for EDA distribution figures
+FEATURE_DISTRIBUTION_GROUPS: list[tuple[str, str, list[str]]] = [
+    ("smoking", "Nhóm thuốc lá", ["pack_years", "smoking_years", "cigarettes_per_day"]),
+    (
+        "clinical",
+        "Nhóm lâm sàng / triệu chứng",
+        ["copd", "chronic_cough", "shortness_of_breath", "xray_abnormal"],
+    ),
+    ("biomarkers", "Nhóm chỉ số đo lường", ["oxygen_saturation", "fev1_x10", "crp_level"]),
+    (
+        "socioeconomic",
+        "Nhóm xã hội – kinh tế",
+        ["education_years", "income_level", "healthcare_access"],
+    ),
 ]
 
 
@@ -161,7 +166,15 @@ def _plot_correlation_heatmap(df: pd.DataFrame, output_dir: Path) -> None:
 
     corr = numeric_df.corr()
     plt.figure(figsize=(14, 10))
-    sns.heatmap(corr, cmap="coolwarm", center=0, square=False)
+    sns.heatmap(
+        corr,
+        cmap="coolwarm",
+        center=0,
+        vmin=-1,
+        vmax=1,
+        square=False,
+        cbar_kws={"ticks": np.arange(-1.0, 1.01, 0.25), "format": "%.2f"},
+    )
     plt.title("Correlation Heatmap (Numerical Features)")
     plt.tight_layout()
     output_path = output_dir / "correlation_heatmap.png"
@@ -170,29 +183,114 @@ def _plot_correlation_heatmap(df: pd.DataFrame, output_dir: Path) -> None:
     logger.info(f"Saved: {output_path}")
 
 
-def _plot_group_comparison(df: pd.DataFrame, output_dir: Path, columns: Iterable[str]) -> None:
-    if TARGET_COLUMN not in df.columns:
-        logger.warning("Target column missing; skipping group comparison plots.")
+def _plot_binary_counts(df: pd.DataFrame, var: str, slug: str, output_dir: Path) -> None:
+    """Binary 0/1: count bar chart (phù hợp hơn histogram liên tục)."""
+    plot_df = df[[var]].dropna()
+    if plot_df.empty:
         return
+    order = sorted(plot_df[var].unique())
+    plt.figure(figsize=(6, 5))
+    ax = sns.countplot(
+        data=plot_df,
+        x=var,
+        order=order,
+        hue=var,
+        palette="Blues",
+        edgecolor="white",
+        legend=False,
+    )
+    ax.set_title(f"Tần suất {var} (0/1)")
+    ax.set_xlabel(var)
+    ax.set_ylabel("Count")
+    for p in ax.patches:
+        ax.annotate(
+            f"{int(p.get_height())}",
+            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
+    plt.tight_layout()
+    out = output_dir / f"distribution_{slug}_{var}.png"
+    plt.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close()
+    logger.info(f"Saved: {out}")
 
-    available_cols = [col for col in columns if col in df.columns]
-    if not available_cols:
-        logger.warning("No key features available for group comparison.")
+
+def _plot_continuous_hist_kde(series: pd.Series, var: str, slug: str, output_dir: Path) -> None:
+    """Continuous physiological / lab-style variables: histogram + KDE."""
+    s = series.dropna()
+    if s.empty:
         return
+    plt.figure(figsize=(8, 5))
+    ax = plt.gca()
+    sns.histplot(
+        s,
+        kde=True,
+        bins=HIST_BINS_DEFAULT,
+        ax=ax,
+        color="skyblue",
+        edgecolor="white",
+    )
+    ax.set_title(f"Distribution of {var}")
+    ax.set_xlabel(var)
+    ax.set_ylabel("Count")
+    plt.tight_layout()
+    out = output_dir / f"distribution_{slug}_{var}.png"
+    plt.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close()
+    logger.info(f"Saved: {out}")
 
-    for col in available_cols:
-        if not pd.api.types.is_numeric_dtype(df[col]):
-            continue
-        plt.figure(figsize=(8, 5))
-        sns.boxplot(x=TARGET_COLUMN, y=col, data=df)
-        plt.title(f"{col} by {TARGET_COLUMN} Group")
-        plt.xlabel(TARGET_COLUMN)
-        plt.ylabel(col)
-        plt.tight_layout()
-        output_path = output_dir / f"group_comparison_{col}.png"
-        plt.savefig(output_path, dpi=150, bbox_inches="tight")
-        plt.close()
-        logger.info(f"Saved: {output_path}")
+
+def _plot_ordinal_or_discrete_bars(series: pd.Series, var: str, slug: str, output_dir: Path) -> None:
+    """Ordinal ranks or discrete years: ordered bar chart of counts (không dùng KDE)."""
+    s = series.dropna()
+    if s.empty:
+        return
+    vc = s.value_counts().sort_index()
+    levels = vc.index.tolist()
+    plot_df = pd.DataFrame({"level": levels, "count": vc.values})
+    plt.figure(figsize=(8, 5))
+    ax = sns.barplot(
+        data=plot_df,
+        x="level",
+        y="count",
+        order=levels,
+        color="cadetblue",
+        edgecolor="white",
+    )
+    ax.set_title(f"Tần suất theo mức (có thứ tự): {var}")
+    ax.set_xlabel(var)
+    ax.set_ylabel("Count")
+    ax.set_xticks(range(len(levels)))
+    ax.set_xticklabels([f"{x:g}" for x in levels])
+    plt.tight_layout()
+    out = output_dir / f"distribution_{slug}_{var}.png"
+    plt.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close()
+    logger.info(f"Saved: {out}")
+
+
+def _plot_feature_group_distributions(df: pd.DataFrame, output_dir: Path) -> None:
+    """
+    Save one figure per variable; chart type matches data semantics per group.
+    """
+    for slug, _title, members in FEATURE_DISTRIBUTION_GROUPS:
+        plotted = 0
+        for var in members:
+            if var not in df.columns or not pd.api.types.is_numeric_dtype(df[var]):
+                continue
+            if slug in ("smoking", "biomarkers"):
+                _plot_continuous_hist_kde(df[var], var, slug, output_dir)
+            elif slug == "clinical":
+                _plot_binary_counts(df, var, slug, output_dir)
+            elif slug == "socioeconomic":
+                _plot_ordinal_or_discrete_bars(df[var], var, slug, output_dir)
+            else:
+                _plot_continuous_hist_kde(df[var], var, slug, output_dir)
+            plotted += 1
+        if plotted == 0:
+            logger.warning(f"No plottable variables for group '{slug}'.")
 
 
 def run_eda(data_path: Path | None = None) -> Path:
@@ -216,13 +314,16 @@ def run_eda(data_path: Path | None = None) -> Path:
     df = pd.read_csv(input_path)
     output_dir = _ensure_output_dir()
 
-    logger.info("Running EDA: shape/dtype, target, missing, outliers, correlation, group comparison")
+    logger.info(
+        "Running EDA: shape/dtype, target, missing, outliers, correlation, "
+        "grouped distributions (type-matched charts)"
+    )
     _save_text_report(df, output_dir)
     _plot_target_distribution(df, output_dir)
     _plot_missing_values(df, output_dir)
     _plot_outliers(df, output_dir, DEFAULT_CONTINUOUS_COLS)
     _plot_correlation_heatmap(df, output_dir)
-    _plot_group_comparison(df, output_dir, DEFAULT_KEY_FEATURES)
+    _plot_feature_group_distributions(df, output_dir)
 
     logger.info(f"EDA completed. Artifacts saved in: {output_dir.resolve()}")
     return output_dir

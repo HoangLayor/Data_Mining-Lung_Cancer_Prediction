@@ -1,100 +1,57 @@
-# 3. PHAN TICH DU LIEU KHAM PHA (EDA)
+# 3. Giải thích các chỉ số trong EDA
 
-Tai lieu nay tong hop ket qua EDA cho bo du lieu trong `data/raw/survey_lung_cancer.csv`, dua tren cac artifact da sinh o `reports/eda/`.
-
-## 1. Kiem tra kich thuoc du lieu va kieu du lieu cua tung bien
-
-- **Kich thuoc du lieu**: `1000` dong, `30` cot.
-- **Cau truc bien**:
-  - Bien nhi phan (dang `int64`): `gender`, `smoker`, `copd`, `xray_abnormal`, ...
-  - Bien lien tuc/so hoc (`float64`): `pack_years`, `oxygen_saturation`, `fev1_x10`, `crp_level`, ...
-  - Bien muc tieu (`int64`): `lung_cancer_risk`.
-
-Nhan xet:
-- Du lieu da duoc chuan hoa kieu du lieu kha tot cho bai toan phan loai.
-- Khong co cot dang text/chuoi bat thuong, nen phu hop de dua vao pipeline tien xu ly va huan luyen.
-
-## 2. Phan tich phan phoi cua bien muc tieu `lung_cancer_risk`
-
-Hinh tham chieu: `reports/eda/target_distribution.png`
-
-So lieu:
-- Nhom `0` (nguy co thap/khong mac): `791` mau (`79.1%`)
-- Nhom `1` (nguy co cao/mac): `209` mau (`20.9%`)
-
-Nhan xet:
-- Du lieu **mat can bang lop** (class imbalance), lop 0 nhieu hon ro ret.
-- Khi huan luyen mo hinh, can uu tien metric nhu `recall`, `f1`, `roc-auc` va xem xet ky thuat can bang du lieu (vi du: SMOTE, class_weight).
-
-## 3. Kiem tra missing values theo tung cot
-
-Hinh tham chieu: `reports/eda/missing_values_percentage.png` (neu co)
-
-Ket qua:
-- Tat ca cac cot deu co `0` gia tri thieu.
-- Ti le missing cua moi cot deu bang `0.0%`.
-
-Nhan xet:
-- Khong can xu ly missing trong tap du lieu hien tai.
-- Van nen giu buoc kiem tra missing trong pipeline de dam bao an toan khi nhan du lieu moi.
-
-## 4. Phat hien outliers o cac bien lien tuc
-
-Hinh tham chieu:
-- `reports/eda/outlier_boxplot_age.png`
-- `reports/eda/outlier_boxplot_oxygen_saturation.png`
-- `reports/eda/outlier_boxplot_fev1_x10.png`
-- `reports/eda/outlier_boxplot_crp_level.png`
-
-Nhan xet tong quan:
-- Cac bien lien tuc deu co do phan tan nhat dinh.
-- `age` va `crp_level` co kha nang xuat hien diem xa tam phan bo (outlier nhe).
-- `oxygen_saturation` va `fev1_x10` phan bo tuong doi tap trung hon, nhung van can kiem tra gioi han sinh hoc.
-
-Y nghia xu ly:
-- Outlier co the anh huong den cac mo hinh nhay cam voi thang do.
-- Pipeline hien tai da co buoc **IQR capping** trong preprocess de han che anh huong cua cac gia tri cuc doan.
-
-## 5. Phan tich tuong quan giua cac bien so
-
-Hinh tham chieu: `reports/eda/correlation_heatmap.png`
-
-Diem can chu y:
-- Nhom bien hut thuoc (`pack_years`, `smoking_years`, `cigarettes_per_day`) co xu huong tuong quan voi nhau.
-- Dieu nay phu hop nghiep vu vi `pack_years` duoc tao tu cuong do + thoi gian hut thuoc.
-
-Nhan xet:
-- Can can nhac da cong tuyen khi dung cac mo hinh tuyen tinh.
-- Co the giam bot bien trung lap hoac dung regularization de han che overfitting.
-
-## 6. So sanh phan phoi bien quan trong giua 2 nhom nguy co
-
-Cac hinh so sanh:
-- `reports/eda/group_comparison_pack_years.png`
-- `reports/eda/group_comparison_smoking_years.png`
-- `reports/eda/group_comparison_cigarettes_per_day.png`
-- `reports/eda/group_comparison_copd.png`
-- `reports/eda/group_comparison_chronic_cough.png`
-- `reports/eda/group_comparison_shortness_of_breath.png`
-- `reports/eda/group_comparison_xray_abnormal.png`
-- `reports/eda/group_comparison_oxygen_saturation.png`
-- `reports/eda/group_comparison_fev1_x10.png`
-- `reports/eda/group_comparison_crp_level.png`
-- `reports/eda/group_comparison_education_years.png`
-- `reports/eda/group_comparison_income_level.png`
-- `reports/eda/group_comparison_healthcare_access.png`
-
-Nhan xet tong hop:
-- Nhom nguy co cao thuong co cac chi so lien quan den hut thuoc va benh ho hap bat loi hon.
-- Cac bien lam sang/chan doan nhu `copd`, `chronic_cough`, `shortness_of_breath`, `xray_abnormal` co kha nang phan tach nhom tot.
-- Cac bien sinh hoc (`oxygen_saturation`, `fev1_x10`, `crp_level`) co y nghia lam sang va can duoc uu tien theo doi.
-- Nhom yeu to xa hoi (`education_years`, `income_level`, `healthcare_access`) co the tac dong gian tiep den nguy co, can danh gia them trong mo hinh da bien.
+Tài liệu chỉ **định nghĩa và ý nghĩa các chỉ số** được dùng trong phân tích khám phá dữ liệu. Các giá trị cụ thể (tần suất, trung vị…) lấy từ `reports/eda/eda_report.txt` và báo cáo chính `Bao_cao_EDA.md`.
 
 ---
 
-## Ket luan EDA ngan gon
+## Chỉ số trong từng bước EDA
 
-- Du lieu sach (khong missing), cau truc ro rang, phu hop cho bai toan phan loai.
-- Bien muc tieu mat can bang, can uu tien chien luoc toi uu `recall`.
-- Nhom bien hut thuoc va trieu chung ho hap cho thay tin hieu du doan manh.
-- Nen tiep tuc buoc feature engineering va kiem soat da cong tuyen trong giai doan mo hinh hoa.
+| Bước | Chỉ số / đại lượng | Ý nghĩa ngắn |
+|:-----|:-------------------|:-------------|
+| Cấu trúc | Số dòng \(N\), số cột \(p\) | Quy mô tập dữ liệu. |
+| Cấu trúc | Kiểu cột (`int64` / `float64`) | Cách máy đọc số và quyết định vẽ thống kê nào. |
+| Biến mục tiêu | Tần suất lớp 0 và 1, tỉ lệ % | Mất cân bằng lớp để chọn metric / cân bằng mẫu. |
+| Thiếu dữ liệu | `%` missing theo cột | Cần imputation hay không. |
+| Ngoại lai | Ngưỡng râu theo \(1{,}5 \times IQR\) (trên boxplot) | Giá trị xa vùng trung tâm theo định nghĩa IQR. |
+| Tương quan | Hệ số tương quan Pearson | Mức độ đồng biến tuyến tính giữa hai biến số (−1 đến 1). |
+| Phân phối đặc trưng | Trục X = giá trị chỉ số, trục Y = Count | Tần suất xuất hiện từng khoảng giá trị của chỉ số trên toàn tập. |
+
+---
+
+## Định nghĩa từng chỉ số trong hình `distribution_<nhóm>_*.png`
+
+Loại biểu đồ phụ thuộc nhóm (sinh bởi `eda.py`): **thuốc lá** và **đo lường** — một panel histogram + KDE; **lâm sàng** — bar tần suất 0/1; **xã hội–kinh tế** — cột tần suất theo mức có thứ tự. Tất cả trên **toàn tập** (không tách hai nhãn `lung_cancer_risk` trên cùng một hình).
+
+| File / biến | Chỉ số là gì | Thang / đơn vị trong dữ liệu |
+|:------------|:-------------|:----------------------------|
+| `pack_years` | Mức tích lũy phơi nhiễm thuốc lá (pack-years). | Liên tục (năm pack). |
+| `smoking_years` | Số năm đã hút thuốc. | Nguyên (năm). |
+| `cigarettes_per_day` | Trung bình điếu thuốc mỗi ngày. | Liên tục (điếu/ngày). |
+| `copd` | Có hay không COPD. | Nhị phân 0/1. |
+| `chronic_cough` | Có hay không ho mạn tính. | Nhị phân 0/1. |
+| `shortness_of_breath` | Có hay không khó thở. | Nhị phân 0/1. |
+| `xray_abnormal` | Có hay không ảnh X-quang bất thường. | Nhị phân 0/1. |
+| `oxygen_saturation` | Độ bão hòa oxy máu \(SpO2\). | % (≈ 90–100). |
+| `fev1_x10` | Thể tích thở ra trong 1 giây \(FEV1\) (đã scale ×10 trong tên biến). | Liên tục theo đơn vị dataset. |
+| `crp_level` | Nồng độ hoặc mức CRP — chỉ báo viêm. | Liên tục (đơn vị theo quy ước dataset). |
+| `education_years` | Tổng số năm học. | Nguyên (năm). |
+| `income_level` | Mức thu nhập qua điểm thứ bậc. | Thứ bậc \(1\) thấp–\(5\) cao (theo khảo sát). |
+| `healthcare_access` | Mức tiếp cận dịch vụ y tế qua điểm thứ bậc. | Thứ bậc \(1\)–\(5\) (theo khảo sát). |
+
+---
+
+## Biến mục tiêu (chỉ số nhãn)
+
+| Biến | Ý nghĩa | Giá trị |
+|:-----|:--------|:--------|
+| `lung_cancer_risk` | Nguy cơ ung thư phổi theo gán nhãn trong dữ liệu. | 0 = không / thấp, 1 = có / cao (theo bộ khảo sát). |
+
+---
+
+## Ghi chú ngắn về các file khác trong `reports/eda/`
+
+- `target_distribution.png`: chỉ là **đếm** theo hai lớp `lung_cancer_risk`.
+- `outlier_boxplot_<tên>.png`: `age`, `oxygen_saturation`, `fev1_x10`, `crp_level` — xem median, quartiles và khoảng râu theo \(1{,}5 \times IQR\).
+- `correlation_heatmap.png`: ma trận Pearson giữa mọi cột số; thanh màu thang −1 đến 1.
+
+Chi tiết số và nhận xét tổng hợp: xem `Bao_cao_EDA.md`.
