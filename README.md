@@ -40,8 +40,7 @@ graph TD
     B -->|Save Raw| C[data/raw/new_data.csv]
     
     subgraph Airflow Pipelines
-        D[Preprocess DAG] --> E[Feature Eng DAG]
-        E --> F[Training DAG]
+        D[Preprocess DAG] -->  F[Training DAG]
         F --> G[Promotion DAG]
     end
     
