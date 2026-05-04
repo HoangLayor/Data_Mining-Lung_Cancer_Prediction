@@ -13,7 +13,7 @@ TRAINING_DIR = Variable.get(
 with DAG(dag_id="logistic_regression_training", start_date=datetime(2025, 1, 1), schedule=None, catchup=False) as dag:
     train_task = DockerOperator(
         task_id="train_task",
-        image="datamining/lr-train:latest",
+        image="jahiang/lr-train:latest",
         api_version="auto",
         auto_remove=True,
         network_mode="datamining_data_network",

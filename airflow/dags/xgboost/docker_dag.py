@@ -13,7 +13,7 @@ TRAINING_DIR = Variable.get(
 with DAG(dag_id="xgboost_training", start_date=datetime(2025, 1, 1), schedule=None, catchup=False) as dag:
     train_task = DockerOperator(
         task_id="train_task",
-        image="datamining/xgboost-train:latest",
+        image="jahiang/xgboost-train:latest",
         api_version="auto",
         auto_remove=True,
         network_mode="datamining_data_network",
