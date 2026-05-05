@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lung Cancer Risk Assessment Platform</title>
+    <title>Nền tảng Đánh giá Nguy cơ Ung thư Phổi</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Header -->
@@ -18,15 +20,15 @@
             </div>
             <nav class="nav-tabs">
                 <button class="nav-item active" data-view="prediction">
-                    <i class="fas fa-stethoscope"></i> Prediction
+                    <i class="fas fa-stethoscope"></i> Dự đoán
                 </button>
                 <button class="nav-item" data-view="ingestion">
-                    <i class="fas fa-database"></i> Data Ingestion
+                    <i class="fas fa-database"></i> Nạp dữ liệu
                 </button>
             </nav>
             <div class="header-status">
                 <span class="status-indicator online"></span>
-                <span>System Online</span>
+                <span>Hệ thống Trực tuyến</span>
             </div>
         </header>
 
@@ -34,164 +36,176 @@
             <!-- Left Column: Input Form -->
             <section class="form-section glass-panel scrollable">
                 <div class="section-header">
-                    <h2><i class="fas fa-clipboard-user"></i> Patient Assessment</h2>
-                    <p>Enter patient demographics, lifestyle, and medical data for risk evaluation.</p>
+                    <h2><i class="fas fa-clipboard-user"></i> Đánh giá Bệnh nhân</h2>
+                    <p>Nhập thông tin nhân khẩu học, lối sống và dữ liệu y tế của bệnh nhân để đánh giá nguy cơ.</p>
                 </div>
 
                 <form id="prediction-form">
                     <!-- Group 1: Demographics -->
                     <div class="form-group-card">
-                        <h3>Demographics</h3>
+                        <h3>Nhân khẩu học</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="age">Age</label>
-                                <input type="number" id="age" name="age" required min="1" max="120" placeholder="e.g. 62">
+                                <label for="age">Tuổi (Age)</label>
+                                <input type="number" id="age" name="age" required min="1" max="120"
+                                    placeholder="VD: 62">
                             </div>
                             <div class="input-field">
-                                <label for="gender">Gender</label>
+                                <label for="gender">Giới tính (Gender)</label>
                                 <select id="gender" name="gender" required>
-                                    <option value="" disabled selected>Select</option>
-                                    <option value="1">Male</option>
-                                    <option value="0">Female</option>
+                                    <option value="" disabled selected>Chọn</option>
+                                    <option value="1">Nam</option>
+                                    <option value="0">Nữ</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="education_years">Education (Years)</label>
-                                <input type="number" id="education_years" name="education_years" required min="0" max="30" placeholder="e.g. 16">
+                                <label for="education_years">Học vấn (Education Years)</label>
+                                <input type="number" id="education_years" name="education_years" required min="0"
+                                    max="30" placeholder="VD: 16">
                             </div>
                             <div class="input-field">
-                                <label for="income_level">Income Level (1-5)</label>
-                                <input type="number" id="income_level" name="income_level" required min="1" max="5" placeholder="e.g. 3">
+                                <label for="income_level">Mức thu nhập 1-5 (Income Level)</label>
+                                <input type="number" id="income_level" name="income_level" required min="1" max="5"
+                                    placeholder="VD: 3">
                             </div>
                         </div>
                     </div>
 
                     <!-- Group 2: Lifestyle & Environment -->
                     <div class="form-group-card">
-                        <h3>Lifestyle & Environment</h3>
+                        <h3>Lối sống & Môi trường</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="smoker">Smoker</label>
+                                <label for="smoker">Hút thuốc (Smoker)</label>
                                 <select id="smoker" name="smoker" required>
-                                    <option value="" disabled selected>Select</option>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="" disabled selected>Chọn</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="smoking_years">Smoking Years</label>
-                                <input type="number" id="smoking_years" name="smoking_years" required step="0.1" min="0" placeholder="e.g. 25.0">
+                                <label for="smoking_years">Số năm hút thuốc (Smoking Years)</label>
+                                <input type="number" id="smoking_years" name="smoking_years" required step="0.1" min="0"
+                                    placeholder="VD: 25.0">
                             </div>
                             <div class="input-field">
-                                <label for="cigarettes_per_day">Cigarettes / Day</label>
-                                <input type="number" id="cigarettes_per_day" name="cigarettes_per_day" required step="0.1" min="0" placeholder="e.g. 20">
+                                <label for="cigarettes_per_day">Số điếu/Ngày (Cigarettes/Day)</label>
+                                <input type="number" id="cigarettes_per_day" name="cigarettes_per_day" required
+                                    step="0.1" min="0" placeholder="VD: 20">
                             </div>
                             <div class="input-field">
-                                <label for="pack_years">Pack Years</label>
-                                <input type="number" id="pack_years" name="pack_years" required step="0.1" min="0" placeholder="e.g. 25.0">
+                                <label for="pack_years">Gói-năm (Pack Years)</label>
+                                <input type="number" id="pack_years" name="pack_years" required step="0.1" min="0"
+                                    placeholder="VD: 25.0">
                             </div>
                             <div class="input-field">
-                                <label for="passive_smoking">Passive Smoking</label>
+                                <label for="passive_smoking">Hút thuốc thụ động (Passive Smoking)</label>
                                 <select id="passive_smoking" name="passive_smoking" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="air_pollution_index">Air Pollution Index (0-100)</label>
-                                <input type="number" id="air_pollution_index" name="air_pollution_index" required step="0.1" min="0" max="100" placeholder="e.g. 45">
+                                <label for="air_pollution_index">Chỉ số ô nhiễm (Air Pollution Index)</label>
+                                <input type="number" id="air_pollution_index" name="air_pollution_index" required
+                                    step="0.1" min="0" max="100" placeholder="VD: 45">
                             </div>
                             <div class="input-field">
-                                <label for="occupational_exposure">Occupational Exposure</label>
+                                <label for="occupational_exposure">Phơi nhiễm nghề nghiệp (Occupational
+                                    Exposure)</label>
                                 <select id="occupational_exposure" name="occupational_exposure" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="radon_exposure">Radon Exposure</label>
+                                <label for="radon_exposure">Phơi nhiễm Radon (Radon Exposure)</label>
                                 <select id="radon_exposure" name="radon_exposure" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="bmi">BMI</label>
-                                <input type="number" id="bmi" name="bmi" required step="0.1" min="10" max="60" placeholder="e.g. 26.5">
+                                <label for="bmi">Chỉ số khối cơ thể (BMI)</label>
+                                <input type="number" id="bmi" name="bmi" required step="0.1" min="10" max="60"
+                                    placeholder="VD: 26.5">
                             </div>
                             <div class="input-field">
-                                <label for="exercise_hours_per_week">Exercise (hrs/week)</label>
-                                <input type="number" id="exercise_hours_per_week" name="exercise_hours_per_week" required step="0.1" min="0" placeholder="e.g. 3.0">
+                                <label for="exercise_hours_per_week">Tập thể dục giờ/tuần (Exercise)</label>
+                                <input type="number" id="exercise_hours_per_week" name="exercise_hours_per_week"
+                                    required step="0.1" min="0" placeholder="VD: 3.0">
                             </div>
                             <div class="input-field">
-                                <label for="diet_quality">Diet Quality (1-5)</label>
-                                <input type="number" id="diet_quality" name="diet_quality" required min="1" max="5" placeholder="e.g. 4">
+                                <label for="diet_quality">Chất lượng ăn uống 1-5 (Diet Quality)</label>
+                                <input type="number" id="diet_quality" name="diet_quality" required min="1" max="5"
+                                    placeholder="VD: 4">
                             </div>
                             <div class="input-field">
-                                <label for="alcohol_units_per_week">Alcohol Units / Week</label>
-                                <input type="number" id="alcohol_units_per_week" name="alcohol_units_per_week" required step="0.1" min="0" placeholder="e.g. 5.0">
+                                <label for="alcohol_units_per_week">Đơn vị cồn/Tuần (Alcohol Units)</label>
+                                <input type="number" id="alcohol_units_per_week" name="alcohol_units_per_week" required
+                                    step="0.1" min="0" placeholder="VD: 5.0">
                             </div>
                         </div>
                     </div>
 
                     <!-- Group 3: Medical History & Symptoms -->
                     <div class="form-group-card">
-                        <h3>Medical History & Symptoms</h3>
+                        <h3>Tiền sử bệnh & Triệu chứng</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="family_history_cancer">Family History Cancer</label>
+                                <label for="family_history_cancer">Tiền sử ung thư (Family History Cancer)</label>
                                 <select id="family_history_cancer" name="family_history_cancer" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="copd">COPD</label>
+                                <label for="copd">Phổi tắc nghẽn mãn tính (COPD)</label>
                                 <select id="copd" name="copd" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="asthma">Asthma</label>
+                                <label for="asthma">Hen suyễn (Asthma)</label>
                                 <select id="asthma" name="asthma" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="previous_tb">Previous TB</label>
+                                <label for="previous_tb">Tiền sử lao (Previous TB)</label>
                                 <select id="previous_tb" name="previous_tb" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="chronic_cough">Chronic Cough</label>
+                                <label for="chronic_cough">Ho mãn tính (Chronic Cough)</label>
                                 <select id="chronic_cough" name="chronic_cough" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="chest_pain">Chest Pain</label>
+                                <label for="chest_pain">Đau ngực (Chest Pain)</label>
                                 <select id="chest_pain" name="chest_pain" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="shortness_of_breath">Shortness of Breath</label>
+                                <label for="shortness_of_breath">Khó thở (Shortness of Breath)</label>
                                 <select id="shortness_of_breath" name="shortness_of_breath" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="fatigue">Fatigue</label>
+                                <label for="fatigue">Mệt mỏi (Fatigue)</label>
                                 <select id="fatigue" name="fatigue" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                         </div>
@@ -199,38 +213,57 @@
 
                     <!-- Group 4: Clinical Results -->
                     <div class="form-group-card">
-                        <h3>Clinical Results</h3>
+                        <h3>Kết quả lâm sàng</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="oxygen_saturation">Oxygen Saturation (%)</label>
-                                <input type="number" id="oxygen_saturation" name="oxygen_saturation" required step="0.1" min="70" max="100" placeholder="e.g. 98.0">
+                                <label for="oxygen_saturation">Độ bão hòa Oxy (Oxygen Saturation)</label>
+                                <input type="number" id="oxygen_saturation" name="oxygen_saturation" required step="0.1"
+                                    min="70" max="100" placeholder="VD: 98.0">
                             </div>
                             <div class="input-field">
-                                <label for="fev1_x10">FEV1</label>
-                                <input type="number" id="fev1_x10" name="fev1_x10" required step="0.1" placeholder="e.g. 38.0">
+                                <label for="fev1_x10">Thể tích thở ra gắng sức (FEV1)</label>
+                                <input type="number" id="fev1_x10" name="fev1_x10" required step="0.1"
+                                    placeholder="VD: 38.0">
                             </div>
                             <div class="input-field">
-                                <label for="crp_level">CRP Level</label>
-                                <input type="number" id="crp_level" name="crp_level" required step="0.1" placeholder="e.g. 1.5">
+                                <label for="crp_level">Mức CRP (CRP Level)</label>
+                                <input type="number" id="crp_level" name="crp_level" required step="0.1"
+                                    placeholder="VD: 1.5">
                             </div>
                             <div class="input-field">
-                                <label for="xray_abnormal">X-Ray Abnormal</label>
+                                <label for="xray_abnormal">X-quang bất thường (X-Ray Abnormal)</label>
                                 <select id="xray_abnormal" name="xray_abnormal" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0" selected>No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0" selected>Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="healthcare_access">Healthcare Access (1-5)</label>
-                                <input type="number" id="healthcare_access" name="healthcare_access" required min="1" max="5" placeholder="e.g. 4">
+                                <label for="healthcare_access">Tiếp cận y tế 1-5 (Healthcare Access)</label>
+                                <input type="number" id="healthcare_access" name="healthcare_access" required min="1"
+                                    max="5" placeholder="VD: 4">
                             </div>
                         </div>
                     </div>
 
+                    <div class="form-actions-header">
+                        <span><i class="fas fa-magic"></i> Kịch bản mẫu nhanh:</span>
+                        <div class="scenario-buttons">
+                            <button type="button" class="btn-scenario" data-scenario="low" title="Khỏe mạnh">Nguy cơ
+                                thấp (Nguy cơ Thấp)</button>
+                            <button type="button" class="btn-scenario" data-scenario="medium"
+                                title="Hút thuốc thụ động, triệu chứng nhẹ">Nguy cơ trung bình (Medium Risk)</button>
+                            <button type="button" class="btn-scenario" data-scenario="high"
+                                title="Hút thuốc nhiều, có triệu chứng">Nguy cơ cao (High Risk)</button>
+                            <button type="button" class="btn-scenario" data-scenario="special"
+                                title="Trẻ tuổi nhưng phơi nhiễm môi trường">Đặc biệt (Special Case)</button>
+                        </div>
+                        <div id="scenario-description" class="scenario-description hidden">
+                        </div>
+                    </div>
+
                     <div class="form-actions">
-                        <button type="button" class="btn secondary" id="btn-fill-dummy">Fill Dummy Data</button>
                         <button type="submit" class="btn primary" id="btn-predict">
-                            <i class="fas fa-bolt"></i> Run Assessment
+                            <i class="fas fa-bolt"></i> Chạy Đánh giá
                         </button>
                     </div>
                 </form>
@@ -240,51 +273,47 @@
             <section class="results-section">
                 <!-- Result Card -->
                 <div class="glass-panel result-card" id="result-card">
-                    <h2><i class="fas fa-chart-pie"></i> Risk Evaluation</h2>
-                    
+                    <h2><i class="fas fa-chart-pie"></i> Đánh giá Nguy cơ</h2>
+
                     <div class="result-placeholder" id="result-placeholder">
                         <i class="fas fa-stethoscope fa-3x"></i>
-                        <p>Submit patient data to see prediction</p>
+                        <p>Gửi dữ liệu bệnh nhân để xem dự đoán</p>
                     </div>
 
                     <div class="result-content hidden" id="result-content">
                         <div class="risk-gauge">
                             <svg viewBox="0 0 36 36" class="circular-chart">
-                                <path class="circle-bg"
-                                    d="M18 2.0845
+                                <path class="circle-bg" d="M18 2.0845
                                     a 15.9155 15.9155 0 0 1 0 31.831
-                                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                                <path class="circle" id="risk-circle"
-                                    stroke-dasharray="0, 100"
-                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle" id="risk-circle" stroke-dasharray="0, 100" d="M18 2.0845
                                     a 15.9155 15.9155 0 0 1 0 31.831
-                                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
+                                    a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 <text x="18" y="20.35" class="percentage" id="risk-percentage">0%</text>
                             </svg>
                         </div>
                         <div class="prediction-text">
-                            <h3 id="prediction-label">Low Risk</h3>
-                            <p id="prediction-desc">The model indicates a low probability of lung cancer based on the provided metrics.</p>
+                            <h3 id="prediction-label">Nguy cơ Thấp</h3>
+                            <p id="prediction-desc">The model indicates a low probability of lung cancer based on the
+                                provided metrics.</p>
                         </div>
                     </div>
-                    
+
                     <!-- Loading Overlay -->
                     <div class="loader-overlay hidden" id="predict-loader">
                         <div class="spinner"></div>
-                        <p>Analyzing...</p>
+                        <p>Đang phân tích...</p>
                     </div>
                 </div>
 
                 <!-- Explanation Card (SHAP) -->
                 <div class="glass-panel explanation-card">
-                    <h2><i class="fas fa-brain"></i> AI Explanation</h2>
+                    <h2><i class="fas fa-brain"></i> AI Giải thích (SHAP)</h2>
                     <div id="explanation-placeholder" class="placeholder-text">
-                        Run prediction to see SHAP feature importance.
+                        Chạy dự đoán để xem tầm quan trọng của các đặc trưng (SHAP).
                     </div>
                     <div id="explanation-content" class="hidden">
-                        <p class="small-text">Key factors influencing this specific prediction:</p>
+                        <p class="small-text">Các yếu tố chính ảnh hưởng đến dự đoán này:</p>
                         <img id="shap-image" src="" alt="SHAP Waterfall Plot" class="shap-plot responsive-img">
                     </div>
                 </div>
@@ -292,201 +321,214 @@
             </section>
         </main>
 
-        <!-- View 2: Data Ingestion -->
+        <!-- View 2: Nạp dữ liệu -->
         <main class="dashboard-layout hidden" id="view-ingestion">
             <!-- Left Column: Manual Entry -->
             <section class="form-section glass-panel scrollable">
                 <div class="section-header">
-                    <h2><i class="fas fa-user-plus"></i> Manual Data Entry</h2>
-                    <p>Add individual patient records directly to the training queue.</p>
+                    <h2><i class="fas fa-user-plus"></i> Nhập liệu thủ công</h2>
+                    <p>Thêm từng bản ghi bệnh nhân trực tiếp vào hàng đợi huấn luyện.</p>
                 </div>
 
                 <form id="ingest-form">
                     <div class="form-group-card">
-                        <h3>Demographics</h3>
+                        <h3>Nhân khẩu học</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="ingest-age">Age</label>
+                                <label for="ingest-age">Tuổi (Age)</label>
                                 <input type="number" id="ingest-age" name="age" required min="1" max="120">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-gender">Gender</label>
+                                <label for="ingest-gender">Giới tính (Gender)</label>
                                 <select id="ingest-gender" name="gender" required>
-                                    <option value="1">Male</option>
-                                    <option value="0">Female</option>
+                                    <option value="1">Nam</option>
+                                    <option value="0">Nữ</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-education_years">Education (Years)</label>
-                                <input type="number" id="ingest-education_years" name="education_years" required min="0" max="30">
+                                <label for="ingest-education_years">Học vấn (Education Years)</label>
+                                <input type="number" id="ingest-education_years" name="education_years" required min="0"
+                                    max="30">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-income_level">Income Level (1-5)</label>
-                                <input type="number" id="ingest-income_level" name="income_level" required min="1" max="5">
+                                <label for="ingest-income_level">Mức thu nhập 1-5 (Income Level)</label>
+                                <input type="number" id="ingest-income_level" name="income_level" required min="1"
+                                    max="5">
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group-card">
-                        <h3>Lifestyle & Environment</h3>
+                        <h3>Lối sống & Môi trường</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="ingest-smoker">Smoker</label>
+                                <label for="ingest-smoker">Hút thuốc (Smoker)</label>
                                 <select id="ingest-smoker" name="smoker" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-smoking_years">Smoking Years</label>
-                                <input type="number" id="ingest-smoking_years" name="smoking_years" required step="0.1" min="0">
+                                <label for="ingest-smoking_years">Số năm hút thuốc (Smoking Years)</label>
+                                <input type="number" id="ingest-smoking_years" name="smoking_years" required step="0.1"
+                                    min="0">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-cigarettes_per_day">Cigarettes / Day</label>
-                                <input type="number" id="ingest-cigarettes_per_day" name="cigarettes_per_day" required step="0.1" min="0">
+                                <label for="ingest-cigarettes_per_day">Số điếu/Ngày (Cigarettes/Day)</label>
+                                <input type="number" id="ingest-cigarettes_per_day" name="cigarettes_per_day" required
+                                    step="0.1" min="0">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-pack_years">Pack Years</label>
-                                <input type="number" id="ingest-pack_years" name="pack_years" required step="0.1" min="0">
+                                <label for="ingest-pack_years">Gói-năm (Pack Years)</label>
+                                <input type="number" id="ingest-pack_years" name="pack_years" required step="0.1"
+                                    min="0">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-passive_smoking">Passive Smoking</label>
+                                <label for="ingest-passive_smoking">Hút thuốc thụ động (Passive Smoking)</label>
                                 <select id="ingest-passive_smoking" name="passive_smoking" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-air_pollution_index">Air Pollution Index</label>
-                                <input type="number" id="ingest-air_pollution_index" name="air_pollution_index" required step="0.1" min="0" max="100">
+                                <label for="ingest-air_pollution_index">Chỉ số ô nhiễm (Air Pollution Index)</label>
+                                <input type="number" id="ingest-air_pollution_index" name="air_pollution_index" required
+                                    step="0.1" min="0" max="100">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-occupational_exposure">Occupational Exposure</label>
+                                <label for="ingest-occupational_exposure">Phơi nhiễm nghề nghiệp (Occupational
+                                    Exposure)</label>
                                 <select id="ingest-occupational_exposure" name="occupational_exposure" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-radon_exposure">Radon Exposure</label>
+                                <label for="ingest-radon_exposure">Phơi nhiễm Radon (Radon Exposure)</label>
                                 <select id="ingest-radon_exposure" name="radon_exposure" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-bmi">BMI</label>
+                                <label for="ingest-bmi">Chỉ số khối cơ thể (BMI)</label>
                                 <input type="number" id="ingest-bmi" name="bmi" required step="0.1" min="10" max="60">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-exercise_hours_per_week">Exercise (hrs/week)</label>
-                                <input type="number" id="ingest-exercise_hours_per_week" name="exercise_hours_per_week" required step="0.1" min="0">
+                                <label for="ingest-exercise_hours_per_week">Tập thể dục giờ/tuần (Exercise)</label>
+                                <input type="number" id="ingest-exercise_hours_per_week" name="exercise_hours_per_week"
+                                    required step="0.1" min="0">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-diet_quality">Diet Quality (1-5)</label>
-                                <input type="number" id="ingest-diet_quality" name="diet_quality" required min="1" max="5">
+                                <label for="ingest-diet_quality">Chất lượng ăn uống 1-5 (Diet Quality)</label>
+                                <input type="number" id="ingest-diet_quality" name="diet_quality" required min="1"
+                                    max="5">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-alcohol_units_per_week">Alcohol Units / Week</label>
-                                <input type="number" id="ingest-alcohol_units_per_week" name="alcohol_units_per_week" required step="0.1" min="0">
+                                <label for="ingest-alcohol_units_per_week">Đơn vị cồn/Tuần (Alcohol Units)</label>
+                                <input type="number" id="ingest-alcohol_units_per_week" name="alcohol_units_per_week"
+                                    required step="0.1" min="0">
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group-card">
-                        <h3>Medical History & Symptoms</h3>
+                        <h3>Tiền sử bệnh & Triệu chứng</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="ingest-family_history_cancer">Family History Cancer</label>
+                                <label for="ingest-family_history_cancer">Tiền sử ung thư (Family History
+                                    Cancer)</label>
                                 <select id="ingest-family_history_cancer" name="family_history_cancer" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-copd">COPD</label>
+                                <label for="ingest-copd">Phổi tắc nghẽn mãn tính (COPD)</label>
                                 <select id="ingest-copd" name="copd" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-asthma">Asthma</label>
+                                <label for="ingest-asthma">Hen suyễn (Asthma)</label>
                                 <select id="ingest-asthma" name="asthma" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-previous_tb">Previous TB</label>
+                                <label for="ingest-previous_tb">Tiền sử lao (Previous TB)</label>
                                 <select id="ingest-previous_tb" name="previous_tb" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-chronic_cough">Chronic Cough</label>
+                                <label for="ingest-chronic_cough">Ho mãn tính (Chronic Cough)</label>
                                 <select id="ingest-chronic_cough" name="chronic_cough" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-chest_pain">Chest Pain</label>
+                                <label for="ingest-chest_pain">Đau ngực (Chest Pain)</label>
                                 <select id="ingest-chest_pain" name="chest_pain" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-shortness_of_breath">Shortness of Breath</label>
+                                <label for="ingest-shortness_of_breath">Khó thở (Shortness of Breath)</label>
                                 <select id="ingest-shortness_of_breath" name="shortness_of_breath" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-fatigue">Fatigue</label>
+                                <label for="ingest-fatigue">Mệt mỏi (Fatigue)</label>
                                 <select id="ingest-fatigue" name="fatigue" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group-card">
-                        <h3>Clinical Results</h3>
+                        <h3>Kết quả lâm sàng</h3>
                         <div class="input-grid">
                             <div class="input-field">
-                                <label for="ingest-oxygen_saturation">Oxygen Saturation (%)</label>
-                                <input type="number" id="ingest-oxygen_saturation" name="oxygen_saturation" required step="0.1" min="70" max="100">
+                                <label for="ingest-oxygen_saturation">Độ bão hòa Oxy (Oxygen Saturation)</label>
+                                <input type="number" id="ingest-oxygen_saturation" name="oxygen_saturation" required
+                                    step="0.1" min="70" max="100">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-fev1_x10">FEV1</label>
+                                <label for="ingest-fev1_x10">Thể tích thở ra gắng sức (FEV1)</label>
                                 <input type="number" id="ingest-fev1_x10" name="fev1_x10" required step="0.1">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-crp_level">CRP Level</label>
+                                <label for="ingest-crp_level">Mức CRP (CRP Level)</label>
                                 <input type="number" id="ingest-crp_level" name="crp_level" required step="0.1">
                             </div>
                             <div class="input-field">
-                                <label for="ingest-xray_abnormal">X-Ray Abnormal</label>
+                                <label for="ingest-xray_abnormal">X-quang bất thường (X-Ray Abnormal)</label>
                                 <select id="ingest-xray_abnormal" name="xray_abnormal" required>
-                                    <option value="1">Yes</option>
-                                    <option value="0">No</option>
+                                    <option value="1">Có</option>
+                                    <option value="0">Không</option>
                                 </select>
                             </div>
                             <div class="input-field">
-                                <label for="ingest-healthcare_access">Healthcare Access (1-5)</label>
-                                <input type="number" id="ingest-healthcare_access" name="healthcare_access" required min="1" max="5">
+                                <label for="ingest-healthcare_access">Tiếp cận y tế 1-5 (Healthcare Access)</label>
+                                <input type="number" id="ingest-healthcare_access" name="healthcare_access" required
+                                    min="1" max="5">
                             </div>
                             <div class="input-field highlight-field">
-                                <label for="ingest-lung_cancer_risk"><b>Diagnosis / Label (Required)</b></label>
+                                <label for="ingest-lung_cancer_risk"><b>Chẩn đoán/Nhãn (Diagnosis/Label)</b></label>
                                 <select id="ingest-lung_cancer_risk" name="lung_cancer_risk" required>
-                                    <option value="" disabled selected>Select Result</option>
-                                    <option value="1">Positive (Cancer Found)</option>
-                                    <option value="0">Negative (Healthy)</option>
+                                    <option value="" disabled selected>Chọn Kết quả</option>
+                                    <option value="1">Dương tính (Có ung thư)</option>
+                                    <option value="0">Âm tính (Khỏe mạnh)</option>
                                 </select>
                             </div>
                         </div>
@@ -495,7 +537,7 @@
                     <div class="form-actions">
                         <button type="button" class="btn secondary" id="btn-fill-dummy-ingest">Fill Dummy Data</button>
                         <button type="submit" class="btn primary" id="btn-ingest-manual">
-                            <i class="fas fa-plus"></i> Add Record
+                            <i class="fas fa-plus"></i> Thêm Bản ghi
                         </button>
                     </div>
                 </form>
@@ -504,23 +546,25 @@
             <!-- Right Column: CSV Upload -->
             <section class="results-section">
                 <div class="glass-panel ingestion-card">
-                    <h2><i class="fas fa-file-csv"></i> Batch CSV Upload</h2>
-                    <p>Upload a CSV file containing multiple patient records. The system will append these to the ingestion queue.</p>
-                    
+                    <h2><i class="fas fa-file-csv"></i> Tải lên tệp CSV hàng loạt</h2>
+                    <p>Upload a CSV file containing multiple patient records. The system will append these to the
+                        ingestion queue.</p>
+
                     <form id="upload-form-ingest" class="upload-zone">
                         <input type="file" id="csv-file-ingest" accept=".csv" required hidden>
                         <label for="csv-file-ingest" class="upload-label" id="upload-label-ingest">
                             <i class="fas fa-cloud-upload-alt fa-2x"></i>
-                            <span>Click or drag CSV here</span>
+                            <span>Nhấp hoặc kéo thả CSV vào đây</span>
                         </label>
-                        <button type="submit" class="btn outline">Upload Batch</button>
+                        <button type="submit" class="btn outline">Tải lên hàng loạt</button>
                     </form>
                     <div id="upload-status-ingest" class="status-msg"></div>
                 </div>
 
                 <div class="glass-panel info-card">
-                    <h2><i class="fas fa-info-circle"></i> Instructions</h2>
-                    <p>Data added here will be saved to the <code>new_data.csv</code> file. This data will be incorporated into the next model training cycle automatically via Airflow.</p>
+                    <h2><i class="fas fa-info-circle"></i> Hướng dẫn</h2>
+                    <p>Data added here will be saved to the <code>new_data.csv</code> file. This data will be
+                        incorporated into the next model training cycle automatically via Airflow.</p>
                 </div>
             </section>
         </main>
@@ -528,4 +572,5 @@
 
     <script src="/static/js/main.js"></script>
 </body>
+
 </html>

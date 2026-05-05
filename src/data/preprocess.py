@@ -154,7 +154,8 @@ def preprocess_data(
     df: pd.DataFrame,
     fit_preprocessor: bool = True,
     preprocessor_path: Optional[str] = None,
-) -> Tuple[pd.DataFrame, pd.Series, Optional[object]]:
+    save_output: bool = False
+) -> Tuple[pd.DataFrame, Optional[pd.Series], object]:
     """
     Full preprocessing pipeline.
 
@@ -225,8 +226,8 @@ def preprocess_data(
         logger.info(f"Target distribution: {y.value_counts().to_dict()}")
     logger.info("=" * 60)
 
-    # Save processed data only if y is present (training mode)
-    if y is not None:
+    # Save processed data only if save_output is True and y is present (training mode)
+    if save_output and y is not None:
         processed_df = X.copy()
         processed_df[TARGET_COLUMN] = y
         processed_path = PROCESSED_DATA_DIR / "processed_data.csv"
@@ -260,6 +261,6 @@ if __name__ == "__main__":
     from src.data.ingest import load_csv
 
     df = load_csv()
-    X, y, preprocessor = preprocess_data(df)
+    X, y, preprocessor = preprocess_data(df, save_output=True)
     print(f"Preprocessed data: X={X.shape}, y={y.shape}")
     print(f"Class balance: {y.value_counts().to_dict()}")

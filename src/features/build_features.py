@@ -128,41 +128,10 @@ def _drop_redundant_columns(
 
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Full feature engineering pipeline.
-
-    Steps:
-        1. Create smoking risk proxy
-        2. Create health risk score
-        3. Create symptom count
-        4. Create lifestyle risk score
-        5. Create respiratory score
-        6. Drop redundant columns (if highly correlated)
-
-    Args:
-        df: Preprocessed DataFrame (features only, no target).
-
-    Returns:
-        DataFrame with engineered features added.
+    Bypassed feature engineering pipeline.
+    Returns the input DataFrame as is.
     """
-    logger.info("=" * 60)
-    logger.info("Starting feature engineering pipeline...")
-    logger.info(f"Input shape: {df.shape}")
-    logger.info(f"Input columns: {list(df.columns)}")
-
-    # Build derived features
-    df = _create_smoking_impact(df)
-    df = _create_clinical_severity_score(df)
-    df = _create_symptom_count(df)
-    df = _create_lifestyle_health_score(df)
-    df = _create_respiratory_condition_score(df)
-
-    # Drop redundant columns
-    df = _drop_redundant_columns(df)
-
-    logger.info(f"Feature engineering complete. Output shape: {df.shape}")
-    logger.info(f"Final columns: {list(df.columns)}")
-    logger.info("=" * 60)
-
+    logger.info("Feature engineering bypassed as per user request.")
     return df
 
 

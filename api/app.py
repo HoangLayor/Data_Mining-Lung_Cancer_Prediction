@@ -149,7 +149,7 @@ def predict(data: PatientData):
     
     try:
         # Preprocess the incoming JSON data using the saved preprocessor
-        X, _, _ = preprocess_data(df, fit_preprocessor=False)
+        X, _, _ = preprocess_data(df, fit_preprocessor=False, save_output=False)
         X = build_features(X)
 
         # Filter features to match exactly what the model expects
@@ -184,7 +184,7 @@ def explain(data: PatientData):
     
     try:
         # Preprocess the incoming JSON data using the saved preprocessor
-        X, _, _ = preprocess_data(df, fit_preprocessor=False)
+        X, _, _ = preprocess_data(df, fit_preprocessor=False, save_output=False)
         X = build_features(X)
 
         # Filter features to match exactly what the model expects

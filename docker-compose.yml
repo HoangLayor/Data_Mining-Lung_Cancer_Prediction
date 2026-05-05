@@ -142,7 +142,7 @@ services:
   airflow-worker:
     <<: *airflow-common
     container_name: airflow-worker
-    command: celery worker
+    command: celery worker --pid /tmp/airflow-worker.pid
     healthcheck:
       test:
         - "CMD-SHELL"
