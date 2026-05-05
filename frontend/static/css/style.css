@@ -240,6 +240,62 @@ header {
     color: var(--text-main);
 }
 
+.form-actions-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.form-actions-header span {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.scenario-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-scenario {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+}
+
+.btn-scenario:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.scenario-description {
+    margin-top: 0.5rem;
+    padding: 0.8rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.scenario-description strong {
+    color: white;
+}
+
 /* --- Buttons --- */
 .form-actions {
     display: flex;
